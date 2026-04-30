@@ -15,8 +15,9 @@ struct TripSampleData {
         endDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()) ?? Date(),
         members: [
             TripMember(name: "Selina", role: "Host"),
-            TripMember(name: "Alex", role: "Member"),
-            TripMember(name: "Jenny", role: "Member")
+            TripMember(name: "Jimmy", role: "Member"),
+            TripMember(name: "Zoe", role: "Member"),
+            TripMember(name: "Leo", role: "Member"),
         ],
         itineraryItems: [
             ItineraryItem(
