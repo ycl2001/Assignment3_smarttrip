@@ -199,9 +199,9 @@ private struct EmptyExpenseView: View {
 #Preview {
     let vm = ExpenseViewModel()
     vm.members = [
-        Member(name: "Alice"),
-        Member(name: "Bob"),
-        Member(name: "Carol")
+        TripMember(name: "Jimmy"),
+        TripMember(name: "Leo"),
+        TripMember(name: "Zoe")
     ]
     let a = vm.members[0], b = vm.members[1], c = vm.members[2]
     vm.addExpense(Expense(
