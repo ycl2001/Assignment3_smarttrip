@@ -89,9 +89,9 @@ final class ExpenseViewModel: ObservableObject {
 
             if settle > 0.005 {
                 result.append(Settlement(
-                    fromTripMemberId: debtors[di].id,
-                    toTripMemberId:   creditors[ci].id,
-                    amount:       (settle * 100).rounded() / 100
+                    fromMemberId: debtors[di].id,
+                    toMemberId: creditors[ci].id,
+                    amount: (settle * 100).rounded() / 100
                 ))
             }
 
