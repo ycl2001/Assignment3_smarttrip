@@ -5,9 +5,12 @@
 //  Created by Yen-Chun Liu on 30/4/2026.
 //
 
+// Provides sample trip data for previews and testing.
+// This allows views to be tested before real user-created data is connected.
 import Foundation
 
 struct TripSampleData {
+    // Example trip used in SwiftUI previews and development testing.
     static var sampleTrip = Trip(
         name: "Tokyo Spring Trip",
         destination: "Tokyo, Japan",

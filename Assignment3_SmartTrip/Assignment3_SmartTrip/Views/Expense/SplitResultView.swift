@@ -150,21 +150,22 @@ private struct SettlementRow: View {
 
 #Preview {
     let vm = ExpenseViewModel()
-    let alice = Member(name: "Alice")
-    let bob   = Member(name: "Bob")
-    let carol = Member(name: "Carol")
-    vm.members = [alice, bob, carol]
+    let jimmy = TripMember(name: "Jimmy")
+    let leo   = TripMember(name: "Leo")
+    let zoe = TripMember(name: "Zoe")
+    let selina = TripMember(name: "Selina")
+    vm.members = [jimmy, leo, zoe, selina]
 
     vm.addExpense(Expense(
         title: "Dinner", amount: 90,
-        payerId: alice.id,
-        participantIds: [alice.id, bob.id, carol.id],
+        payerId: jimmy.id,
+        participantIds: [jimmy.id, leo.id, zoe.id, selina.id],
         category: .food
     ))
     vm.addExpense(Expense(
         title: "Taxi", amount: 30,
-        payerId: bob.id,
-        participantIds: [bob.id, carol.id],
+        payerId: selina.id,
+        participantIds: [selina.id, zoe.id],
         category: .transport
     ))
 
