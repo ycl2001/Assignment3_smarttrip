@@ -5,11 +5,14 @@
 //  Created by Yen-Chun Liu on 30/4/2026.
 //
 
+// Screen for creating a new trip.
+// The user enters basic trip details, and the view returns a Trip object through onCreate.
 import SwiftUI
 
 struct CreateTripView: View {
     @Environment(\.dismiss) private var dismiss
 
+// Local form state used to temporarily store user input before creating a Trip.
     @State private var tripName = ""
     @State private var destination = ""
     @State private var startDate = Date()
@@ -17,6 +20,7 @@ struct CreateTripView: View {
     @State private var hostName = ""
     @State private var showError = false
 
+// Closure used to pass the newly created Trip back to the parent view.
     var onCreate: (Trip) -> Void
 
     var body: some View {
@@ -58,11 +62,13 @@ struct CreateTripView: View {
         }
     }
 
+// Validates required fields and creates a new Trip if the input is valid.
     private func createTrip() {
         let trimmedTripName = tripName.trimmingCharacters(in: .whitespaces)
         let trimmedDestination = destination.trimmingCharacters(in: .whitespaces)
         let trimmedHostName = hostName.trimmingCharacters(in: .whitespaces)
 
+        // Prevents users from creating incomplete or invalid trips.
         guard !trimmedTripName.isEmpty,
               !trimmedDestination.isEmpty,
               !trimmedHostName.isEmpty,

@@ -324,6 +324,6 @@ struct AddExpenseView: View {
 
 #Preview("Add Expense") {
     let vm = ExpenseViewModel()
-    vm.members = [Member(name: "Alice"), Member(name: "Bob"), Member(name: "Carol")]
-    return AddExpenseView(viewModel: vm)
+    vm.members = [TripMember(name: "Jimmy"), TripMember(name: "Leo"), TripMember(name: "Carol")]
+    return AddExpenseView(ExpenseViewModel: vm)
 }

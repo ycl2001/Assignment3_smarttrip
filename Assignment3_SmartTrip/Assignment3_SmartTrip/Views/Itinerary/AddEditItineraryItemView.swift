@@ -4,12 +4,19 @@
 //
 //  Created by Yen-Chun Liu on 30/4/2026.
 //
+
+// Reusable screen for both adding and editing itinerary places.
+// If itemToEdit is nil, the screen works as Add Place.
+// If itemToEdit has a value, the screen works as Edit Place.
 import SwiftUI
 
 struct AddEditItineraryItemView: View {
     @Environment(\.dismiss) private var dismiss
 
+    // Optional existing item. Nil means the user is creating a new itinerary item.
     let itemToEdit: ItineraryItem?
+    
+    // Sends the new or updated itinerary item back to the itinerary list.
     var onSave: (ItineraryItem) -> Void
 
     @State private var placeName = ""
@@ -62,6 +69,7 @@ struct AddEditItineraryItemView: View {
                     }
                 }
             }
+            // Pre-fills the form when editing an existing itinerary item.
             .onAppear {
                 if let item = itemToEdit {
                     placeName = item.title
@@ -74,8 +82,10 @@ struct AddEditItineraryItemView: View {
             }
         }
     }
-
+    
+    // Creates an ItineraryItem from the form input and sends it back using onSave.
     private func savePlace() {
+        // Prevents empty place names or locations from being saved.
         guard !placeName.isEmpty, !location.isEmpty else {
             return
         }
