@@ -25,41 +25,96 @@ struct CreateTripView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Trip Details") {
-                    TextField("Trip name", text: $tripName)
-                    TextField("Destination", text: $destination)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Tell us about your trip")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .padding(.top, 8)
 
-                Section("Dates") {
-                    DatePicker("Start date", selection: $startDate, displayedComponents: .date)
-                    DatePicker("End date", selection: $endDate, displayedComponents: .date)
+                    tripDetailsCard
+                    datesCard
+                    hostCard
+                    createButton
                 }
-
-                Section("Host") {
-                    TextField("Your name", text: $hostName)
-                }
+                .padding()
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Create Trip")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        createTrip()
-                    }
-                }
-            }
+            .navigationBarTitleDisplayMode(.inline)
             .alert("Invalid Trip Details", isPresented: $showError) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Please enter a trip name, destination, host name, and make sure the end date is not before the start date.")
             }
         }
+    }
+
+    // Reusable card style to match the soft rounded layout.
+    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            content()
+        }
+        .padding()
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+    }
+
+    private var tripDetailsCard: some View {
+        card {
+            Text("Where")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("Shibuya, Japan", text: $destination)
+
+            Divider()
+
+            Text("Trip name")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("Spring trip with friends", text: $tripName)
+        }
+    }
+
+    private var datesCard: some View {
+        card {
+            Text("When")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            DatePicker("Start date", selection: $startDate, displayedComponents: .date)
+
+            DatePicker("End date", selection: $endDate, displayedComponents: .date)
+        }
+    }
+
+    private var hostCard: some View {
+        card {
+            Text("Who")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("Your name", text: $hostName)
+        }
+    }
+
+    private var createButton: some View {
+        Button {
+            createTrip()
+        } label: {
+            Text("Confirm")
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color(red: 0.02, green: 0.22, blue: 0.15))
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+        }
+        .padding(.top, 8)
     }
 
 // Validates required fields and creates a new Trip if the input is valid.
