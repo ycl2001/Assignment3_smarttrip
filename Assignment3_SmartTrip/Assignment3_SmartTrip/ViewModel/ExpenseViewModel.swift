@@ -1,18 +1,5 @@
 import Foundation
 
-// MARK: - Member
-// TODO: delete this once Member.swift from the team is added to the project
-// needs at least: id: UUID, name: String
-struct Member: Identifiable, Codable, Hashable {
-    let id:   UUID
-    var name: String
-
-    init(id: UUID = UUID(), name: String) {
-        self.id   = id
-        self.name = name
-    }
-}
-
 // MARK: - ExpenseViewModel
 
 @MainActor
@@ -20,8 +7,8 @@ final class ExpenseViewModel: ObservableObject {
 
     @Published private(set) var expenses: [Expense] = []
 
-    // set this from TripViewModel/Dashboard so balance calculations work
-    @Published var members: [Member] = []
+    // set this from the trip's member list so balance calculations work
+    @Published var members: [TripTripMember] = []
 
     // MARK: Computed
 
@@ -70,7 +57,7 @@ final class ExpenseViewModel: ObservableObject {
 
     // MARK: Helpers
 
-    func member(for id: UUID) -> Member? {
+    func member(for id: UUID) -> TripMember? {
         members.first { $0.id == id }
     }
 
@@ -101,8 +88,8 @@ final class ExpenseViewModel: ObservableObject {
 
             if settle > 0.005 {
                 result.append(Settlement(
-                    fromMemberId: debtors[di].id,
-                    toMemberId:   creditors[ci].id,
+                    fromTripMemberId: debtors[di].id,
+                    toTripMemberId:   creditors[ci].id,
                     amount:       (settle * 100).rounded() / 100
                 ))
             }
