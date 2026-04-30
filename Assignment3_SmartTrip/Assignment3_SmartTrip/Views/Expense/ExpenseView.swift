@@ -197,22 +197,39 @@ private struct EmptyExpenseView: View {
 // MARK: - Preview
 
 #Preview {
-    let vm = ExpenseViewModel()
-    vm.members = [
-        TripMember(name: "Jimmy"),
-        TripMember(name: "Leo"),
-        TripMember(name: "Zoe")
-    ]
-    let a = vm.members[0], b = vm.members[1], c = vm.members[2]
-    vm.addExpense(Expense(
-        title: "Dinner", amount: 90,
-        payerId: a.id, participantIds: [a.id, b.id, c.id],
-        category: .food
-    ))
-    vm.addExpense(Expense(
-        title: "Taxi", amount: 30,
-        payerId: b.id, participantIds: [a.id, b.id],
-        category: .transport
-    ))
-    return ExpenseView(viewModel: vm)
+    let vm: ExpenseViewModel = {
+        let vm = ExpenseViewModel()
+
+        vm.members = [
+            TripMember(name: "Jimmy", role: "Host"),
+            TripMember(name: "Leo", role: "Member"),
+            TripMember(name: "Zoe", role: "Member"),
+            TripMember(name: "Selina", role: "Member")
+        ]
+
+        let a = vm.members[0]
+        let b = vm.members[1]
+        let c = vm.members[2]
+        let d = vm.members[3]
+
+        vm.addExpense(Expense(
+            title: "Dinner",
+            amount: 90,
+            payerId: a.id,
+            participantIds: [a.id, b.id, c.id, d.id],
+            category: .food
+        ))
+
+        vm.addExpense(Expense(
+            title: "Taxi",
+            amount: 30,
+            payerId: d.id,
+            participantIds: [c.id, d.id],
+            category: .transport
+        ))
+
+        return vm
+    }()
+
+    ExpenseView(viewModel: vm)
 }
