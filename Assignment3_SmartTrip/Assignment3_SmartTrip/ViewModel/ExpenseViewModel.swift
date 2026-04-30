@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 // MARK: - ExpenseViewModel
 
@@ -8,7 +9,7 @@ final class ExpenseViewModel: ObservableObject {
     @Published private(set) var expenses: [Expense] = []
 
     // set this from the trip's member list so balance calculations work
-    @Published var members: [TripTripMember] = []
+    @Published var members: [TripMember] = []
 
     // MARK: Computed
 
