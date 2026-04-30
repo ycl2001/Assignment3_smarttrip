@@ -17,10 +17,10 @@ struct TripSampleData {
         startDate: Date(),
         endDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()) ?? Date(),
         members: [
-            TripMember(name: "Selina", role: "Host"),
-            TripMember(name: "Jimmy", role: "Member"),
-            TripMember(name: "Zoe", role: "Member"),
+            TripMember(name: "Jimmy", role: "Host"),
             TripMember(name: "Leo", role: "Member"),
+            TripMember(name: "Zoe", role: "Member"),
+            TripMember(name: "Selina", role: "Member"),
         ],
         itineraryItems: [
             ItineraryItem(
