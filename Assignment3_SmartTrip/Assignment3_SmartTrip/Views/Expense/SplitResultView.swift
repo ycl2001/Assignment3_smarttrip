@@ -149,27 +149,38 @@ private struct SettlementRow: View {
 // MARK: - Preview
 
 #Preview {
-    let vm = ExpenseViewModel()
-    let jimmy = TripMember(name: "Jimmy")
-    let leo   = TripMember(name: "Leo")
-    let zoe = TripMember(name: "Zoe")
-    let selina = TripMember(name: "Selina")
-    vm.members = [jimmy, leo, zoe, selina]
+    let vm: ExpenseViewModel = {
+        let vm = ExpenseViewModel()
+        vm.members = [
+            TripMember(name: "Jimmy", role: "Host"),
+            TripMember(name: "Leo", role: "Member"),
+            TripMember(name: "Zoe", role: "Member"),
+            TripMember(name: "Selina", role: "Member")
+        ]
 
-    vm.addExpense(Expense(
-        title: "Dinner", amount: 90,
-        payerId: jimmy.id,
-        participantIds: [jimmy.id, leo.id, zoe.id, selina.id],
-        category: .food
-    ))
-    vm.addExpense(Expense(
-        title: "Taxi", amount: 30,
-        payerId: selina.id,
-        participantIds: [selina.id, zoe.id],
-        category: .transport
-    ))
+        let a = vm.members[0]
+        let b = vm.members[1]
+        let c = vm.members[2]
+        let d = vm.members[3]
 
-    return NavigationStack {
-        SplitResultView(viewModel: vm)
-    }
+        vm.addExpense(Expense(
+            title: "Dinner",
+            amount: 90,
+            payerId: a.id,
+            participantIds: [a.id, b.id, c.id],
+            category: .food
+        ))
+
+        vm.addExpense(Expense(
+            title: "Taxi",
+            amount: 30,
+            payerId: d.id,
+            participantIds: [c.id, d.id],
+            category: .transport
+        ))
+
+        return vm
+    }()
+
+    SplitResultView(viewModel: vm)
 }

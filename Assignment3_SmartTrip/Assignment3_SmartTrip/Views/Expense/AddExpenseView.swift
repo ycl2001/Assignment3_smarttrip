@@ -323,7 +323,18 @@ struct AddExpenseView: View {
 // MARK: - Preview
 
 #Preview("Add Expense") {
-    let vm = ExpenseViewModel()
-    vm.members = [TripMember(name: "Jimmy"), TripMember(name: "Leo"), TripMember(name: "Carol")]
-    return AddExpenseView(ExpenseViewModel: vm)
+    let vm: ExpenseViewModel = {
+        let vm = ExpenseViewModel()
+        
+        vm.members = [
+            TripMember(name: "Jimmy", role: "Host"),
+            TripMember(name: "Leo", role: "Member"),
+            TripMember(name: "Zoe", role: "Member"),
+            TripMember(name: "Selina", role: "Member")
+        ]
+        
+        return vm
+    }()
+
+    AddExpenseView(viewModel: vm)
 }
