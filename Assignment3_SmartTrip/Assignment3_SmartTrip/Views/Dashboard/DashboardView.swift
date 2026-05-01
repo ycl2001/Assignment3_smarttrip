@@ -3,6 +3,8 @@
 //  Assignment3_SmartTrip
 //
 
+//  Created by Ziying Zhao on 30/4/2026.
+
 import SwiftUI
 
 struct DashboardView: View {
@@ -33,7 +35,7 @@ struct DashboardView: View {
                     weatherCardPlaceholder
                     featureGrid
                 }
-                .padding(.top, 8)
+                .padding(.top, 7)
                 .padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground))
@@ -47,7 +49,7 @@ struct DashboardView: View {
                 Button { dismiss() } label: {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.black)
                 }
                 Spacer()
                 Button { } label: {
@@ -60,28 +62,23 @@ struct DashboardView: View {
             }
 
             HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(trip?.destination ?? "Your Trip")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.primary)
-
-                    if let trip {
-                        Text("\(dateFormatter.string(from: trip.startDate)) – \(dateFormatter.string(from: trip.endDate))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text(trip?.destination ?? "Your Trip")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
                 Spacer()
-                Circle()
-                    .fill(Color(.systemGray4))
-                    .frame(width: 52, height: 52)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    )
-                    .overlay(Circle().stroke(Color(.label), lineWidth: 2))
+            }
+
+            if let trip {
+                HStack(alignment: .center) {
+                    Text("\(dateFormatter.string(from: trip.startDate)) – \(dateFormatter.string(from: trip.endDate))")
+                        .font(.system(size: 17))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 26))
+                        .foregroundStyle(Color(.systemGray2))
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -93,15 +90,15 @@ struct DashboardView: View {
             HStack {
                 Spacer()
                 Circle()
-                    .fill(Color.orange.opacity(0.9))
-                    .frame(width: 180, height: 180)
-                    .offset(x: 70)
+                    .fill(Color(red: 0.95, green: 0.65, blue: 0.35).opacity(0.95))
+                    .frame(width: 130, height: 130)
+                    .offset(x: 40, y: 40)
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("During your trip, the average temperature is")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.9))
+                    .font(.system(size: 15))
+                    .foregroundStyle(.white.opacity(1.0))
 
                 Text("-- °C – -- °C")
                     .font(.title)
@@ -117,15 +114,17 @@ struct DashboardView: View {
                     Text(trip?.destination ?? "City")
                         .font(.subheadline)
                         .fontWeight(.bold)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.white)
                 }
             }
-            .padding(20)
+            .padding(.leading, 16)
+            .padding(.trailing, 30)
+            .padding(.vertical, 29)
         }
         .frame(height: 140)
         .background(
             LinearGradient(
-                colors: [Color(red: 0.1, green: 0.3, blue: 0.85), Color(red: 0.25, green: 0.55, blue: 0.95)],
+                colors: [Color(red: 0.20, green: 0.45, blue: 0.75), Color(red: 0.30, green: 0.58, blue: 0.88)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -145,8 +144,11 @@ struct DashboardView: View {
                 FeatureCard(icon: "airplane.departure", title: "Flight", subtitle: "Not added yet")
             }
 
-            FeatureCard(icon: "scope", title: "Locations", subtitle: "0 locations added")
-                .opacity(0.5)
+            NavigationLink {
+                Text("Locations Page Coming Soon")
+            } label: {
+                FeatureCard(icon: "scope", title: "Locations", subtitle: "0 locations added")
+            }
 
             NavigationLink {
                 ItineraryView(trip: tripBinding)
@@ -154,14 +156,14 @@ struct DashboardView: View {
                 FeatureCard(
                     icon: "point.topleft.down.to.point.bottomright.curvepath",
                     title: "Itinerary",
-                    subtitle: "\(trip?.numberOfDays ?? 0) days"
+                    subtitle: "\(trip?.numberOfDays ?? 0) days · \(trip?.activityCount ?? 0) activities"
                 )
             }
 
             NavigationLink {
                 ExpenseView(viewModel: expenseViewModel)
             } label: {
-                FeatureCard(icon: "cylinder.split.1x2", title: "Finance", subtitle: "Not setup yet")
+                FeatureCard(icon: "cylinder.split.1x2", title: "Expense", subtitle: expenseViewModel.expenses.isEmpty ? "Not setup yet" : "Total: $\(String(format: "%.2f", expenseViewModel.totalSpending))")
             }
         }
         .padding(.horizontal, 16)
@@ -174,24 +176,30 @@ struct FeatureCard: View {
     let subtitle: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.primary)
+                .font(.system(size: 24))
+                .foregroundStyle(Color.black)
+                .padding(.top, 7)
+
+            Spacer()
+                .frame(height: 6)
 
             Text(title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(Color.black)
 
             Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.secondary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 130, alignment: .topLeading)
         .padding(16)
         .background(.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius:16)
+                .stroke(Color(.systemGray4), lineWidth: 1))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 }
@@ -200,7 +208,7 @@ struct FeatureCard: View {
     let vm = TripViewModel()
     vm.currentTrip = Trip(
         name: "Summer Trip",
-        destination: "Tokyo",
+        destination: "Tokyo, Japan",
         startDate: Date(),
         endDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())!,
         members: [],
