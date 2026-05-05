@@ -5,47 +5,44 @@
 //  Created by Yen-Chun Liu on 30/4/2026.
 //
 
-// Displays all itinerary items for the current trip.
-// Users can add, edit, and delete itinerary places from this screen.
-
 import SwiftUI
 
 struct ItineraryView: View {
-    // Binding allows this view to directly update the selected trip's itinerary items.
     @Binding var trip: Trip
 
-    @State private var showAddPlace = false
+    // Local copy of items so mutations update the list immediately
+    // without causing DashboardView to re-render (which resets the NavigationStack).
+    // Synced back to trip.itineraryItems on disappear.
+    @State private var localItems:   [ItineraryItem] = []
+    @State private var showAddPlace  = false
     @State private var selectedItem: ItineraryItem?
 
     var body: some View {
         List {
-            // Shows a friendly empty state when no itinerary items have been added yet.
-            if trip.itineraryItems.isEmpty {
+            if localItems.isEmpty {
                 ContentUnavailableView(
                     "No places yet",
                     systemImage: "map",
                     description: Text("Add your first itinerary place to start planning.")
                 )
             } else {
-                // Displays each itinerary item as a tappable row for editing.
-                ForEach(trip.itineraryItems) { item in
+                ForEach(localItems) { item in
                     Button {
                         selectedItem = item
                     } label: {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(item.title)
                                 .font(.headline)
-
                             Text(item.location)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-
                             Text(item.category.rawValue)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
+                    .foregroundStyle(.primary)
                 }
                 .onDelete(perform: deleteItem)
             }
@@ -60,25 +57,31 @@ struct ItineraryView: View {
                 }
             }
         }
-        // Opens the Add Place form and appends the saved item to the trip itinerary.
+        // Load from the trip binding once when the view appears
+        .onAppear {
+            localItems = trip.itineraryItems
+        }
+        // Write changes back to the binding only when leaving,
+        // so DashboardView doesn't re-render while we're navigated here
+        .onDisappear {
+            trip.itineraryItems = localItems
+        }
         .sheet(isPresented: $showAddPlace) {
             AddEditItineraryItemView(itemToEdit: nil) { newItem in
-                trip.itineraryItems.append(newItem)
+                localItems.append(newItem)
             }
         }
-        // Opens the same form in Edit mode and replaces the selected itinerary item.
         .sheet(item: $selectedItem) { item in
             AddEditItineraryItemView(itemToEdit: item) { updatedItem in
-                if let index = trip.itineraryItems.firstIndex(where: { $0.id == item.id }) {
-                    trip.itineraryItems[index] = updatedItem
+                if let index = localItems.firstIndex(where: { $0.id == item.id }) {
+                    localItems[index] = updatedItem
                 }
             }
         }
     }
 
-    // Deletes itinerary items from the trip based on the selected list row.
     private func deleteItem(at offsets: IndexSet) {
-        trip.itineraryItems.remove(atOffsets: offsets)
+        localItems.remove(atOffsets: offsets)
     }
 }
 
