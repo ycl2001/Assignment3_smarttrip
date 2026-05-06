@@ -17,7 +17,7 @@ struct WeatherCardView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 8) {
-                Text("During your trip, the average temperature is")
+                Text("Current weather at your destination")
                     .font(.caption)
                     .opacity(0.9)
                 
