@@ -239,7 +239,9 @@ struct FeatureCard: View {
         endDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())!,
         members: [
             TripMember(name: "Jimmy", role: "Host"),
-            TripMember(name: "Leo",   role: "Member")
+            TripMember(name: "Leo",   role: "Member"),
+            TripMember(name: "Zoe",   role: "Member"),
+            TripMember(name: "Selina",   role: "Member")
         ],
         itineraryItems: []
     )
