@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HomePageView: View {
+
     @StateObject private var tripViewModel = TripViewModel()
     @StateObject private var expenseViewModel = ExpenseViewModel()
 
@@ -21,9 +22,14 @@ struct HomePageView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 24) {
+
                     headerSection
 
-                    emptyTripCard
+                    if tripViewModel.hasTrip {
+                        upcomingTripCard
+                    } else {
+                        emptyTripCard
+                    }
 
                     Spacer()
 
@@ -32,13 +38,20 @@ struct HomePageView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
             }
+
+            // Navigate to create trip page
             .navigationDestination(isPresented: $showCreateTrip) {
                 CreateTripView { newTrip in
                     tripViewModel.createTrip(newTrip)
+
+                    // Sync members into expense system
                     expenseViewModel.members = newTrip.members
+
                     showDashboard = true
                 }
             }
+
+            // Navigate to dashboard page
             .navigationDestination(isPresented: $showDashboard) {
                 DashboardView(
                     viewModel: tripViewModel,
@@ -48,148 +61,332 @@ struct HomePageView: View {
         }
     }
 
+    // MARK: - Demo Data Loader
+
+    private func loadDemoCardData() {
+
+        // Prevent duplicate demo loading
+        guard tripViewModel.currentTrip == nil else {
+            return
+        }
+
+        // Load trip
+        tripViewModel.currentTrip = DemoCardData.trip
+
+        // Sync members
+        expenseViewModel.members = DemoCardData.members
+
+        // Load expenses
+        for expense in DemoCardData.expenses {
+            expenseViewModel.addExpense(expense)
+        }
+    }
+
+    // MARK: - Header
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 18) {
+
             HStack {
+
                 Image(systemName: "globe.asia.australia.fill")
                     .font(.system(size: 34))
-                    .foregroundStyle(Color(red: 0.02, green: 0.30, blue: 0.22))
+                    .foregroundStyle(
+                        Color(
+                            red: 0.02,
+                            green: 0.30,
+                            blue: 0.22
+                        )
+                    )
 
                 Spacer()
 
-                Button {} label: {
+                Button {
+
+                } label: {
                     Image(systemName: "bell.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: 18))
                         .foregroundStyle(.black)
-                        .frame(width: 52, height: 52)
+                        .frame(width: 44, height: 44)
                         .background(Color.white)
                         .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
                 }
 
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [.green.opacity(0.7), .orange.opacity(0.8)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                // Profile button loads demo data
+                Button {
+                    loadDemoCardData()
+
+                } label: {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    .green.opacity(0.7),
+                                    .orange.opacity(0.8)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
-                    .frame(width: 52, height: 52)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundStyle(.white)
-                    )
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundStyle(.white)
+                        )
+                }
+                .buttonStyle(.plain)
             }
 
             VStack(alignment: .leading, spacing: 4) {
+
                 Text("Hello Jimmy!")
-                    .font(.system(size: 40, weight: .regular))
-                    .foregroundStyle(.primary)
+                    .font(
+                        .system(
+                            size: 36,
+                            weight: .medium
+                        )
+                    )
 
                 Text("You have \(tripViewModel.hasTrip ? 1 : 0) upcoming trips")
-                    .font(.title3)
                     .foregroundStyle(.secondary)
             }
         }
     }
 
+    // MARK: - Empty State Card
+
     private var emptyTripCard: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.white)
+        VStack(spacing: 28) {
 
-                VStack(spacing: 24) {
-                    Image(systemName: "safari.fill")
-                        .font(.system(size: 120))
-                        .foregroundStyle(Color(red: 0.95, green: 0.55, blue: 0.18))
+            Spacer()
 
-                    Text("Thinking of going\nsomewhere?")
-                        .font(.system(size: 32, weight: .regular))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.primary)
+            Image(systemName: "safari.fill")
+                .font(.system(size: 110))
+                .foregroundStyle(.orange)
 
-                    Button {
-                        showCreateTrip = true
-                    } label: {
-                        Text("Start planning")
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(red: 0.02, green: 0.34, blue: 0.25))
-                            .clipShape(Capsule())
-                    }
-                    .padding(.horizontal, 32)
-                }
-                .padding(.vertical, 48)
+            Text("Thinking of going\nsomewhere?")
+                .font(
+                    .system(
+                        size: 32,
+                        weight: .medium
+                    )
+                )
+                .multilineTextAlignment(.center)
+
+            Button {
+                showCreateTrip = true
+
+            } label: {
+                Text("Start planning")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        Color(
+                            red: 0.02,
+                            green: 0.34,
+                            blue: 0.25
+                        )
+                    )
+                    .clipShape(Capsule())
             }
-            .frame(maxWidth: .infinity)
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color(.systemGray4), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+            .padding(.horizontal, 32)
+
+            Spacer()
         }
+        .padding(.vertical, 36)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: 460
+        )
+        .background(Color.white)
+        .clipShape(
+            RoundedRectangle(cornerRadius: 24)
+        )
+        .shadow(
+            color: .black.opacity(0.05),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
 
-    private var bottomNavigation: some View {
-        HStack(spacing: 18) {
+    // MARK: - Upcoming Trip Card
 
-            // Main navigation capsule
-            HStack(spacing: 28) {
+    private var upcomingTripCard: some View {
 
-                // Past Trips
-                VStack(spacing: 4) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 20))
+        Button {
+            showDashboard = true
 
-                    Text("Past Trips")
-                        .font(.caption)
-                }
+        } label: {
 
-                // Shared / Invited Trips
-                VStack(spacing: 4) {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 20))
+            VStack(alignment: .leading, spacing: 14) {
 
-                    Text("Group")
-                        .font(.caption)
-                }
+                if let trip = tripViewModel.currentTrip {
 
-                // Budget List
-                VStack(spacing: 4) {
-                    Image(systemName: "list.bullet.rectangle")
-                        .font(.system(size: 20))
+                    ZStack(alignment: .bottomLeading) {
 
-                    Text("Expense")
-                        .font(.caption)
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(
+                                            red: 0.05,
+                                            green: 0.35,
+                                            blue: 0.28
+                                        ),
+
+                                        Color(
+                                            red: 0.98,
+                                            green: 0.55,
+                                            blue: 0.15
+                                        )
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(height: 220)
+
+                        VStack(alignment: .leading, spacing: 6) {
+
+                            Text(trip.destination)
+                                .font(.title.bold())
+                                .foregroundStyle(.white)
+
+                            Text(
+                                "\(trip.numberOfDays) days · \(trip.activityCount) activities"
+                            )
+                            .foregroundStyle(.white.opacity(0.85))
+                        }
+                        .padding()
+                    }
+
+                    HStack {
+
+                        Label(
+                            "\(trip.members.count) members",
+                            systemImage: "person.2.fill"
+                        )
+
+                        Spacer()
+
+                        Label(
+                            "Open trip",
+                            systemImage: "arrow.right.circle.fill"
+                        )
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             }
-            .foregroundStyle(.black)
+            .padding()
+            .background(Color.white)
+            .clipShape(
+                RoundedRectangle(cornerRadius: 24)
+            )
+            .shadow(
+                color: .black.opacity(0.08),
+                radius: 10,
+                x: 0,
+                y: 4
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Bottom Navigation
+
+    private var bottomNavigation: some View {
+
+        HStack(spacing: 18) {
+
+            HStack(spacing: 28) {
+
+                NavigationLink {
+                    PastTripsView()
+
+                } label: {
+                    bottomItem(
+                        icon: "clock.arrow.circlepath",
+                        title: "Past Trips"
+                    )
+                }
+
+                NavigationLink {
+                    GroupView()
+
+                } label: {
+                    bottomItem(
+                        icon: "person.2.fill",
+                        title: "Group"
+                    )
+                }
+
+                NavigationLink {
+                    BudgetListView()
+
+                } label: {
+                    bottomItem(
+                        icon: "list.bullet.rectangle",
+                        title: "Budget"
+                    )
+                }
+            }
             .padding(.horizontal, 28)
             .padding(.vertical, 14)
             .background(Color.white.opacity(0.95))
             .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            .shadow(
+                color: .black.opacity(0.08),
+                radius: 8,
+                x: 0,
+                y: 4
+            )
 
-            // Floating plus button
             Button {
                 showCreateTrip = true
+
             } label: {
+
                 Image(systemName: "plus")
                     .font(.title2)
                     .foregroundStyle(.black)
                     .frame(width: 62, height: 62)
                     .background(Color.white)
                     .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    .shadow(
+                        color: .black.opacity(0.08),
+                        radius: 8,
+                        x: 0,
+                        y: 4
+                    )
             }
         }
         .padding(.bottom, 16)
     }
+
+    // MARK: - Bottom Item
+
+    private func bottomItem(
+        icon: String,
+        title: String
+    ) -> some View {
+
+        VStack(spacing: 4) {
+
+            Image(systemName: icon)
+                .font(.system(size: 18))
+
+            Text(title)
+                .font(.caption2)
+        }
+        .foregroundStyle(.black)
+    }
 }
+
+// MARK: - Preview
 
 #Preview {
     HomePageView()
