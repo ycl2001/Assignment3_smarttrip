@@ -2,32 +2,49 @@ import SwiftUI
 
 struct ExpenseView: View {
     @ObservedObject var viewModel: ExpenseViewModel
+
     var selectedExpense: Expense? = nil
+    var tripNameFilter: String? = nil
 
     @State private var showingAddExpense = false
     @State private var expenseToEdit: Expense?
 
-    // group expenses by day, newest first
+    private var displayedExpenses: [Expense] {
+        if let tripNameFilter {
+            return viewModel.expenses(for: tripNameFilter)
+        } else {
+            return viewModel.expenses
+        }
+    }
+
     private var groupedExpenses: [(dateLabel: String, items: [Expense])] {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.doesRelativeDateFormatting = true
 
-        let sorted = viewModel.expenses.sorted { $0.date > $1.date }
+        let sorted = displayedExpenses.sorted { $0.date > $1.date }
+
         var groups: [(dateLabel: String, items: [Expense])] = []
         var current: (dateLabel: String, items: [Expense])? = nil
 
         for expense in sorted {
             let label = formatter.string(from: expense.date)
+
             if current?.dateLabel == label {
                 current?.items.append(expense)
             } else {
-                if let existing = current { groups.append(existing) }
+                if let existing = current {
+                    groups.append(existing)
+                }
+
                 current = (label, [expense])
             }
         }
 
-        if let last = current { groups.append(last) }
+        if let last = current {
+            groups.append(last)
+        }
+
         return groups
     }
 
@@ -35,7 +52,11 @@ struct ExpenseView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 summaryCard
-                if !viewModel.members.isEmpty { balanceCard }
+
+                if !viewModel.members.isEmpty {
+                    balanceCard
+                }
+
                 expenseListSection
             }
             .padding()
@@ -56,23 +77,37 @@ struct ExpenseView: View {
             AddExpenseView(viewModel: viewModel)
         }
         .sheet(item: $expenseToEdit) { expense in
-            AddExpenseView(viewModel: viewModel, editingExpense: expense)
+            AddExpenseView(
+                viewModel: viewModel,
+                editingExpense: expense
+            )
         }
         .onAppear {
+            if let tripNameFilter {
+                viewModel.currentTripName = tripNameFilter
+            }
+
             if let selectedExpense {
                 expenseToEdit = selectedExpense
             }
         }
     }
 
-    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    private func card<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             content()
         }
         .padding()
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+        .shadow(
+            color: .black.opacity(0.06),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
     }
 
     private var summaryCard: some View {
@@ -81,8 +116,11 @@ struct ExpenseView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Text(viewModel.totalSpending, format: .currency(code: "AUD"))
-                .font(.title2.bold())
+            Text(
+                displayedExpenses.reduce(0) { $0 + $1.amount },
+                format: .currency(code: "AUD")
+            )
+            .font(.title2.bold())
 
             Divider()
 
@@ -92,12 +130,20 @@ struct ExpenseView: View {
                 HStack {
                     Text("See how to settle up")
                         .font(.subheadline)
+
                     Spacer()
+
                     Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(Color(red: 0.02, green: 0.22, blue: 0.15))
+                .foregroundStyle(
+                    Color(
+                        red: 0.02,
+                        green: 0.22,
+                        blue: 0.15
+                    )
+                )
             }
         }
     }
@@ -111,10 +157,19 @@ struct ExpenseView: View {
             ForEach(viewModel.members) { member in
                 HStack {
                     Text(member.name)
+
                     Spacer()
-                    Text(viewModel.balance(for: member.id), format: .currency(code: "AUD"))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(viewModel.balance(for: member.id) >= 0 ? Color.green : Color.red)
+
+                    Text(
+                        viewModel.balance(for: member.id),
+                        format: .currency(code: "AUD")
+                    )
+                    .fontWeight(.semibold)
+                    .foregroundStyle(
+                        viewModel.balance(for: member.id) >= 0
+                        ? Color.green
+                        : Color.red
+                    )
                 }
 
                 if member.id != viewModel.members.last?.id {
@@ -126,7 +181,7 @@ struct ExpenseView: View {
 
     @ViewBuilder
     private var expenseListSection: some View {
-        if viewModel.expenses.isEmpty {
+        if displayedExpenses.isEmpty {
             card {
                 VStack(spacing: 12) {
                     Image(systemName: "receipt")
@@ -152,11 +207,14 @@ struct ExpenseView: View {
                         .foregroundStyle(.secondary)
 
                     ForEach(group.items) { expense in
-                        ExpenseRowView(expense: expense, viewModel: viewModel)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                expenseToEdit = expense
-                            }
+                        ExpenseRowView(
+                            expense: expense,
+                            viewModel: viewModel
+                        )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            expenseToEdit = expense
+                        }
 
                         if expense.id != group.items.last?.id {
                             Divider()
@@ -178,12 +236,22 @@ private struct ExpenseRowView: View {
                 .font(.body)
                 .foregroundStyle(.white)
                 .frame(width: 36, height: 36)
-                .background(Color(red: 0.02, green: 0.22, blue: 0.15))
+                .background(
+                    Color(
+                        red: 0.02,
+                        green: 0.22,
+                        blue: 0.15
+                    )
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(expense.title)
                     .font(.body)
+
+                Text(viewModel.tripName(for: expense))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
 
                 if let payer = viewModel.member(for: expense.payerId) {
                     Text("Paid by \(payer.name)")
@@ -194,8 +262,11 @@ private struct ExpenseRowView: View {
 
             Spacer()
 
-            Text(expense.amount, format: .currency(code: "AUD"))
-                .font(.body.bold())
+            Text(
+                expense.amount,
+                format: .currency(code: "AUD")
+            )
+            .font(.body.bold())
         }
         .padding(.vertical, 2)
     }
@@ -204,6 +275,7 @@ private struct ExpenseRowView: View {
 #Preview {
     let vm: ExpenseViewModel = {
         let vm = ExpenseViewModel()
+
         vm.members = [
             TripMember(name: "Jimmy", role: "Host"),
             TripMember(name: "Leo", role: "Member"),
@@ -215,6 +287,8 @@ private struct ExpenseRowView: View {
         let b = vm.members[1]
         let c = vm.members[2]
         let d = vm.members[3]
+
+        vm.currentTripName = "Tokyo Friend Trip"
 
         vm.addExpense(
             Expense(
