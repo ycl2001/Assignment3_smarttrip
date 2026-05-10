@@ -130,11 +130,18 @@ struct DashboardView: View {
             ],
             spacing: 14
         ) {
-            FeatureCard(
-                icon: "airplane",
-                title: "Flight",
-                subtitle: "Not added yet"
-            )
+            NavigationLink {
+                FlightView(trip: tripBinding)
+            } label: {
+                FeatureCard(
+                    icon: "airplane",
+                    title: "Flight",
+                    subtitle: trip?.flights.isEmpty == false
+                        ? "\(trip!.flights.count) flight(s) added"
+                        : "Not added yet"
+                )
+            }
+            .buttonStyle(.plain)
 
             NavigationLink {
                 LocationView(trip: tripBinding)
