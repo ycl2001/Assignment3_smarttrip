@@ -59,9 +59,8 @@ class FlightSearchViewModel: ObservableObject {
     @Published var results:            [FlightSearchResult] = []
     @Published var isSearching         = false
     @Published var errorMessage:       String?
-    /// Resolved IATA codes shown as a hint under the search fields
-    @Published var resolvedFrom:       String?
-    @Published var resolvedTo:         String?
+    @Published var resolvedFrom: String?
+    @Published var resolvedTo:   String?
 
     // ─── Replace with your own key from https://rapidapi.com ───
     // Sign up free → search "AeroDataBox" → subscribe to "Free" plan → copy API key
@@ -192,31 +191,24 @@ class FlightSearchViewModel: ObservableObject {
         return nil
     }
 
-    // MARK: - Search
+    // MARK: - Search by flight number (free plan endpoint)
 
-    func search(fromCity: String, toCity: String, date: Date) async {
-        // Resolve city names to IATA
-        guard let fromIATA = resolveIATA(for: fromCity) else {
-            errorMessage = "City not recognised: \"\(fromCity)\""
-            resolvedFrom = nil
+    func search(flightNumber: String, date: Date) async {
+        let clean = flightNumber
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: " ", with: "")
+            .uppercased()
+
+        guard !clean.isEmpty else {
+            errorMessage = "Enter a flight number"
             return
         }
-        guard let toIATA = resolveIATA(for: toCity) else {
-            errorMessage = "City not recognised: \"\(toCity)\""
-            resolvedTo = nil
-            return
-        }
 
-        resolvedFrom = fromIATA
-        resolvedTo   = toIATA
-
-        let fromDT = isoDateTime(date, hour: 0,  minute: 0)
-        let toDT   = isoDateTime(date, hour: 23, minute: 59)
-
-        let urlStr = "https://\(host)/flights/airports/iata/\(fromIATA)/\(fromDT)/\(toDT)?direction=Departure&withLeg=true&withCodeshared=true"
+        let dateStr = isoDate(date)
+        let urlStr  = "https://\(host)/flights/number/\(clean)/\(dateStr)"
 
         guard let url = URL(string: urlStr) else {
-            errorMessage = "Invalid airport code"
+            errorMessage = "Invalid flight number"
             return
         }
 
@@ -237,7 +229,7 @@ class FlightSearchViewModel: ObservableObject {
                     errorMessage = "Invalid API key — check FlightSearchViewModel.swift"
                     isSearching = false; return
                 case 404:
-                    errorMessage = "Airport \(fromIATA) not found in database"
+                    errorMessage = "Flight \(clean) not found for \(dateStr)"
                     isSearching = false; return
                 case 429:
                     errorMessage = "Too many requests — try again later"
@@ -246,28 +238,21 @@ class FlightSearchViewModel: ObservableObject {
                 }
             }
 
-            let parsed     = try JSONDecoder().decode(AeroAirportFlightsResponse.self, from: data)
-            let departures = parsed.departures ?? []
+            let flights = try JSONDecoder().decode([AeroFlightResponse].self, from: data)
 
-            let matched = departures.filter {
-                $0.arrival?.airport?.iata?.uppercased() == toIATA
+            guard let first = flights.first else {
+                errorMessage = "No data for \(clean) on \(dateStr)"
+                isSearching = false; return
             }
 
-            if matched.isEmpty {
-                errorMessage = "No direct flights \(fromIATA)→\(toIATA) on this date"
-            } else {
-                results = matched.compactMap { flight in
-                    guard let num = flight.number else { return nil }
-                    return FlightSearchResult(
-                        flightNumber:     num,
-                        airline:          flight.airline?.name ?? "Unknown Airline",
-                        departureAirport: flight.departure?.airport?.iata ?? fromIATA,
-                        arrivalAirport:   flight.arrival?.airport?.iata   ?? toIATA,
-                        departureTime:    parseTime(flight.departure?.scheduledTime?.utc) ?? date,
-                        arrivalTime:      parseTime(flight.arrival?.scheduledTime?.utc)   ?? date
-                    )
-                }
-            }
+            results = [FlightSearchResult(
+                flightNumber:     first.number ?? clean,
+                airline:          first.airline?.name ?? "Unknown Airline",
+                departureAirport: first.departure?.airport?.iata ?? "???",
+                arrivalAirport:   first.arrival?.airport?.iata   ?? "???",
+                departureTime:    parseTime(first.departure?.scheduledTime?.utc) ?? date,
+                arrivalTime:      parseTime(first.arrival?.scheduledTime?.utc)   ?? date
+            )]
         } catch {
             errorMessage = "Could not load flight data"
         }
@@ -277,15 +262,11 @@ class FlightSearchViewModel: ObservableObject {
 
     // MARK: - Helpers
 
-    private func isoDateTime(_ date: Date, hour: Int, minute: Int = 0) -> String {
-        var comps = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
-        comps.hour   = hour
-        comps.minute = minute
-        let d = Calendar(identifier: .gregorian).date(from: comps) ?? date
+    private func isoDate(_ date: Date) -> String {
         let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        f.dateFormat = "yyyy-MM-dd"
         f.locale     = Locale(identifier: "en_US_POSIX")
-        return f.string(from: d)
+        return f.string(from: date)
     }
 
     private func parseTime(_ raw: String?) -> Date? {

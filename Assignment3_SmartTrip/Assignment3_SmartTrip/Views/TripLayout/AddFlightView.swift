@@ -13,9 +13,8 @@ struct AddFlightView: View {
     var onSave: (Flight) -> Void
 
     // Search bar state
-    @State private var searchFromCity = ""
-    @State private var searchToCity   = ""
-    @State private var searchDate     = Date()
+    @State private var searchFlightNumber = ""
+    @State private var searchDate         = Date()
 
     // Form fields (auto-filled by search or entered manually)
     @State private var flightNumber:     String    = ""
@@ -79,10 +78,10 @@ struct AddFlightView: View {
                 }
             }
             .onAppear(perform: populateForEditing)
-            // Auto-fill when exactly 1 result returns
+            // Auto-fill when result returns
             .onChange(of: searchVM.results) { _, results in
-                guard results.count == 1 else { return }
-                fillForm(from: results[0])
+                guard let first = results.first else { return }
+                fillForm(from: first)
             }
         }
     }
@@ -104,122 +103,33 @@ struct AddFlightView: View {
 
     private var searchCard: some View {
         card {
-            Text("Search by destination")
+            Text("Look up by flight number")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // From row
-            HStack(spacing: 10) {
-                Image(systemName: "airplane.departure")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22)
-                VStack(alignment: .leading, spacing: 2) {
-                    TextField("From city  (e.g. Sydney)", text: $searchFromCity)
-                        .autocorrectionDisabled()
-                        .onChange(of: searchFromCity) { _, _ in
-                            searchVM.resolvedFrom = nil
-                            searchVM.errorMessage = nil
-                            searchVM.results = []
-                        }
-                    if let iata = searchVM.resolvedFrom {
-                        Text("→ \(iata)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+            TextField("Flight number  (e.g. QF1, EK407, SQ22)", text: $searchFlightNumber)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .onChange(of: searchFlightNumber) { _, _ in
+                    searchVM.errorMessage = nil
+                    searchVM.results = []
                 }
-            }
-
-            Divider()
-
-            // To row
-            HStack(spacing: 10) {
-                Image(systemName: "airplane.arrival")
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22)
-                VStack(alignment: .leading, spacing: 2) {
-                    TextField("To city  (e.g. Tokyo)", text: $searchToCity)
-                        .autocorrectionDisabled()
-                        .onChange(of: searchToCity) { _, _ in
-                            searchVM.resolvedTo = nil
-                            searchVM.errorMessage = nil
-                            searchVM.results = []
-                        }
-                    if let iata = searchVM.resolvedTo {
-                        Text("→ \(iata)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
 
             Divider()
 
             DatePicker("Date", selection: $searchDate, displayedComponents: .date)
 
-            // Error feedback
+            // Error / success feedback
             if let err = searchVM.errorMessage {
                 HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .foregroundStyle(.red)
-                    Text(err)
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                    Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.red)
+                    Text(err).font(.caption).foregroundStyle(.red)
                 }
-            }
-
-            // Results list
-            if !searchVM.results.isEmpty {
-                Divider()
-
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text("\(searchVM.results.count) flight(s) found — tap to select")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-
-                ForEach(searchVM.results, id: \.flightNumber) { result in
-                    Button {
-                        fillForm(from: result)
-                    } label: {
-                        HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(result.flightNumber)
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-                                Text(result.airline)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                HStack(spacing: 4) {
-                                    Text(timeFmt.string(from: result.departureTime))
-                                        .fontWeight(.semibold)
-                                    Image(systemName: "arrow.right")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                    Text(timeFmt.string(from: result.arrivalTime))
-                                        .fontWeight(.semibold)
-                                }
-                                .font(.subheadline)
-                                .foregroundStyle(.primary)
-                                Text("UTC")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(.secondary)
-                                .font(.caption)
-                        }
-                        .padding(.vertical, 6)
-                    }
-                    .buttonStyle(.plain)
-
-                    if result != searchVM.results.last {
-                        Divider()
-                    }
+            } else if !searchVM.results.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    Text("Flight found — fields filled below")
+                        .font(.caption).foregroundStyle(.green)
                 }
             }
 
@@ -228,9 +138,8 @@ struct AddFlightView: View {
             Button {
                 Task {
                     await searchVM.search(
-                        fromCity: searchFromCity,
-                        toCity:   searchToCity,
-                        date:     searchDate
+                        flightNumber: searchFlightNumber,
+                        date: searchDate
                     )
                 }
             } label: {
@@ -240,7 +149,7 @@ struct AddFlightView: View {
                     } else {
                         Image(systemName: "magnifyingglass")
                     }
-                    Text(searchVM.isSearching ? "Searching…" : "Search Flights")
+                    Text(searchVM.isSearching ? "Searching…" : "Search Flight")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
