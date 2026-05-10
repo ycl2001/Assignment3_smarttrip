@@ -11,12 +11,12 @@ struct DashboardView: View {
     @ObservedObject var viewModel: TripViewModel
     @ObservedObject var expenseViewModel: ExpenseViewModel
     @Environment(\.dismiss) private var dismiss
-
+    
     @State private var showingAddMember = false
     @State private var newMemberName    = ""
-
+    
     private var trip: Trip? { viewModel.selectedTrip }
-
+    
     private var tripBinding: Binding<Trip> {
         Binding(
             get: {
@@ -42,7 +42,7 @@ struct DashboardView: View {
         f.dateStyle = .medium
         return f
     }()
-
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -68,9 +68,9 @@ struct DashboardView: View {
             }
         }
     }
-
+    
     // MARK: - Header
-
+    
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -88,12 +88,12 @@ struct DashboardView: View {
                         .background(Color(.darkGray), in: RoundedRectangle(cornerRadius: 10))
                 }
             }
-
+            
             Text(trip?.destination ?? "Your Trip")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
-
+            
             if let trip {
                 HStack(alignment: .center) {
                     Text("\(dateFormatter.string(from: trip.startDate)) – \(dateFormatter.string(from: trip.endDate))")
@@ -114,9 +114,9 @@ struct DashboardView: View {
         }
         .padding(.horizontal, 16)
     }
-
+    
     // MARK: - Feature Grid
-
+    
     private var featureGrid: some View {
         LazyVGrid(
             columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
@@ -127,13 +127,13 @@ struct DashboardView: View {
             } label: {
                 FeatureCard(icon: "airplane.departure", title: "Flight", subtitle: "Not added yet")
             }
-
+            
             NavigationLink {
                 Text("Locations Page Coming Soon")
             } label: {
                 FeatureCard(icon: "scope", title: "Locations", subtitle: "0 locations added")
             }
-
+            
             NavigationLink {
                 ItineraryView(trip: tripBinding)
             } label: {
@@ -143,7 +143,7 @@ struct DashboardView: View {
                     subtitle: "\(trip?.numberOfDays ?? 0) days · \(trip?.activityCount ?? 0) activities"
                 )
             }
-
+            
             NavigationLink {
                 ExpenseView(viewModel: expenseViewModel)
             } label: {
@@ -151,22 +151,26 @@ struct DashboardView: View {
                     icon: "cylinder.split.1x2",
                     title: "Expense",
                     subtitle: expenseViewModel.expenses.isEmpty
-                        ? "Not setup yet"
-                        : "Total: AUD \(String(format: "%.2f", expenseViewModel.totalSpending))"
+                    ? "Not setup yet"
+                    : "Total: AUD \(String(format: "%.2f", expenseViewModel.totalSpending))"
                 )
             }
         }
         .padding(.horizontal, 16)
     }
-
+    
     // MARK: - Add Member Sheet
-
+    
     private var addMemberSheet: some View {
         NavigationStack {
             Form {
-                Section("Name") {
-                    TextField("e.g. Sarah", text: $newMemberName)
+                Section("Name of Participants") {
+                    TextField(
+                        "e.g. Sarah, Leo, Zoe",
+                        text: $newMemberName
+                    )
                 }
+                
                 if let members = trip?.members, !members.isEmpty {
                     Section("Current Members") {
                         ForEach(members) { member in
@@ -190,21 +194,40 @@ struct DashboardView: View {
                         showingAddMember = false
                     }
                 }
+                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        let name = newMemberName.trimmingCharacters(in: .whitespaces)
-                        guard !name.isEmpty else { return }
-                        if let currentTrip = viewModel.currentTrip,
+                        let names = newMemberName
+                            .split(separator: ",")
+                            .map {
+                                $0.trimmingCharacters(
+                                    in: .whitespacesAndNewlines
+                                )
+                            }
+                            .filter {
+                                !$0.isEmpty
+                            }
+                        
+                        guard !names.isEmpty else { return }
+                        
+                        if let currentTrip = viewModel.selectedTrip,
                            let index = viewModel.trips.firstIndex(where: { $0.id == currentTrip.id }) {
                             
-                            viewModel.trips[index].members.append(
-                                TripMember(name: name, role: "Member")
-                            )
+                            for name in names {
+                                viewModel.trips[index].members.append(
+                                    TripMember(name: name, role: "Member")
+                                )
+                            }
                         }
+                        
                         newMemberName = ""
                         showingAddMember = false
                     }
-                    .disabled(newMemberName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(
+                        newMemberName
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .isEmpty
+                    )
                 }
             }
         }

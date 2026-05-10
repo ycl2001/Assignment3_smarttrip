@@ -12,21 +12,46 @@
 import Foundation
 
 struct Trip: Identifiable {
-    let id = UUID()
+
+    var id: UUID
+
     var name: String
     var destination: String
+
     var startDate: Date
     var endDate: Date
+
     var members: [TripMember]
     var itineraryItems: [ItineraryItem]
 
-// Calculates the total number of days in the trip.
-// This is used by the dashboard to summarise trip duration.
-    var numberOfDays: Int {
-        Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+    init(
+        id: UUID = UUID(),
+        name: String,
+        destination: String,
+        startDate: Date,
+        endDate: Date,
+        members: [TripMember],
+        itineraryItems: [ItineraryItem]
+    ) {
+
+        self.id = id
+        self.name = name
+        self.destination = destination
+        self.startDate = startDate
+        self.endDate = endDate
+        self.members = members
+        self.itineraryItems = itineraryItems
     }
 
-// Counts how many itinerary activities have been added to this trip.
+    var numberOfDays: Int {
+
+        Calendar.current.dateComponents(
+            [.day],
+            from: startDate,
+            to: endDate
+        ).day ?? 0
+    }
+
     var activityCount: Int {
         itineraryItems.count
     }
