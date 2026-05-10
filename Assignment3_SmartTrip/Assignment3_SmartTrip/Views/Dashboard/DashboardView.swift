@@ -15,15 +15,28 @@ struct DashboardView: View {
     @State private var showingAddMember = false
     @State private var newMemberName    = ""
 
-    private var trip: Trip? { viewModel.currentTrip }
+    private var trip: Trip? { viewModel.selectedTrip }
 
     private var tripBinding: Binding<Trip> {
         Binding(
-            get: { viewModel.currentTrip ?? Trip(name: "", destination: "", startDate: .now, endDate: .now, members: [], itineraryItems: []) },
-            set: { viewModel.currentTrip = $0 }
+            get: {
+                viewModel.currentTrip ?? Trip(
+                    name: "",
+                    destination: "",
+                    startDate: .now,
+                    endDate: .now,
+                    members: [],
+                    itineraryItems: []
+                )
+            },
+            set: { updatedTrip in
+                if let index = viewModel.trips.firstIndex(where: { $0.id == updatedTrip.id }) {
+                    viewModel.trips[index] = updatedTrip
+                }
+            }
         )
     }
-
+    
     private let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateStyle = .medium
@@ -181,7 +194,13 @@ struct DashboardView: View {
                     Button("Add") {
                         let name = newMemberName.trimmingCharacters(in: .whitespaces)
                         guard !name.isEmpty else { return }
-                        viewModel.currentTrip?.members.append(TripMember(name: name, role: "Member"))
+                        if let currentTrip = viewModel.currentTrip,
+                           let index = viewModel.trips.firstIndex(where: { $0.id == currentTrip.id }) {
+                            
+                            viewModel.trips[index].members.append(
+                                TripMember(name: name, role: "Member")
+                            )
+                        }
                         newMemberName = ""
                         showingAddMember = false
                     }
@@ -231,19 +250,30 @@ struct FeatureCard: View {
 // MARK: - Preview
 
 #Preview {
-    let vm = TripViewModel()
-    vm.currentTrip = Trip(
-        name: "Summer Trip",
-        destination: "Tokyo, Japan",
-        startDate: Date(),
-        endDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())!,
-        members: [
-            TripMember(name: "Jimmy", role: "Host"),
-            TripMember(name: "Leo",   role: "Member"),
-            TripMember(name: "Zoe",   role: "Member"),
-            TripMember(name: "Selina",   role: "Member")
-        ],
-        itineraryItems: []
+    let vm: TripViewModel = {
+        let vm = TripViewModel()
+        
+        vm.createTrip(
+            Trip(
+                name: "Summer Trip",
+                destination: "Tokyo, Japan",
+                startDate: Date(),
+                endDate: Calendar.current.date(byAdding: .day, value: 7, to: Date())!,
+                members: [
+                    TripMember(name: "Jimmy", role: "Host"),
+                    TripMember(name: "Leo", role: "Member"),
+                    TripMember(name: "Zoe", role: "Member"),
+                    TripMember(name: "Selina", role: "Member")
+                ],
+                itineraryItems: []
+            )
+        )
+        
+        return vm
+    }()
+
+    DashboardView(
+        viewModel: vm,
+        expenseViewModel: ExpenseViewModel()
     )
-    return DashboardView(viewModel: vm, expenseViewModel: ExpenseViewModel())
 }

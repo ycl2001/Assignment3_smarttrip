@@ -41,13 +41,40 @@ struct HomePageView: View {
 
             // Navigate to create trip page
             .navigationDestination(isPresented: $showCreateTrip) {
+
                 CreateTripView { newTrip in
+
+                    // Save newly created trip
                     tripViewModel.createTrip(newTrip)
 
-                    // Sync members into expense system
+                    // Select newly created trip for dashboard
+                    tripViewModel.selectTrip(newTrip)
+
+                    // Sync expense members
                     expenseViewModel.members = newTrip.members
 
-                    showDashboard = true
+                    // Close create page first
+                    showCreateTrip = false
+
+                    // Check if trip is already completed
+                    let today = Calendar.current.startOfDay(for: Date())
+                    let tripEndDate = Calendar.current.startOfDay(for: newTrip.endDate)
+
+                    if tripEndDate >= today {
+
+                        // Open dashboard for active/upcoming trips
+                        DispatchQueue.main.asyncAfter(
+                            deadline: .now() + 0.1
+                        ) {
+
+                            showDashboard = true
+                        }
+
+                    } else {
+
+                        // Past trips only go to archive
+                        showDashboard = false
+                    }
                 }
             }
 
@@ -65,20 +92,29 @@ struct HomePageView: View {
 
     private func loadDemoCardData() {
 
-        // Prevent duplicate demo loading
-        guard tripViewModel.currentTrip == nil else {
-            return
+        // If no trip exists, load demo trip
+        if tripViewModel.currentTrip == nil {
+
+            tripViewModel.createTrip(DemoCardData.trip)
         }
 
-        // Load trip
-        tripViewModel.currentTrip = DemoCardData.trip
+        // Sync members into expense system
+        if let currentTrip = tripViewModel.currentTrip {
 
-        // Sync members
-        expenseViewModel.members = DemoCardData.members
+            expenseViewModel.members = currentTrip.members
 
-        // Load expenses
-        for expense in DemoCardData.expenses {
-            expenseViewModel.addExpense(expense)
+        } else {
+
+            expenseViewModel.members = DemoCardData.members
+        }
+
+        // Prevent duplicate expense loading
+        if expenseViewModel.expenses.isEmpty {
+
+            for expense in DemoCardData.expenses {
+
+                expenseViewModel.addExpense(expense)
+            }
         }
     }
 
@@ -217,6 +253,14 @@ struct HomePageView: View {
     private var upcomingTripCard: some View {
 
         Button {
+
+            // Select current upcoming trip
+            if let trip = tripViewModel.currentTrip {
+
+                tripViewModel.selectTrip(trip)
+            }
+
+            // Open dashboard
             showDashboard = true
 
         } label: {
@@ -305,7 +349,7 @@ struct HomePageView: View {
             HStack(spacing: 28) {
 
                 NavigationLink {
-                    PastTripsView()
+                    PastTripsView(viewModel: tripViewModel)
 
                 } label: {
                     bottomItem(
@@ -325,8 +369,9 @@ struct HomePageView: View {
                 }
 
                 NavigationLink {
-                    BudgetListView()
-
+                    BudgetListView(
+                        viewModel: expenseViewModel
+                    )
                 } label: {
                     bottomItem(
                         icon: "list.bullet.rectangle",

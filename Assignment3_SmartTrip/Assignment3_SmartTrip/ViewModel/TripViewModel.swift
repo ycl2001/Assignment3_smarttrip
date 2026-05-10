@@ -11,20 +11,42 @@ import Foundation
 import Combine
 
 class TripViewModel: ObservableObject {
-    // Stores the trip currently being created or viewed in the app.
-    @Published var currentTrip: Trip?
+    @Published var trips: [Trip] = []
+    @Published var selectedTripId: UUID?
 
-    // Saves a newly created trip as the current active trip.
-    func createTrip(_ trip: Trip) {
-        currentTrip = trip
+    var currentTrip: Trip? {
+        trips
+            .filter { $0.endDate >= Date() }
+            .sorted { $0.startDate < $1.startDate }
+            .first
     }
 
-    // Clears the current trip, useful when returning to the start flow.
-    func clearTrip() {
-        currentTrip = nil
+    var selectedTrip: Trip? {
+        guard let selectedTripId else { return currentTrip }
+        return trips.first { $0.id == selectedTripId }
+    }
+
+    var pastTrips: [Trip] {
+        trips
+            .filter { $0.endDate < Date() }
+            .sorted { $0.endDate > $1.endDate }
     }
 
     var hasTrip: Bool {
         currentTrip != nil
+    }
+
+    func createTrip(_ trip: Trip) {
+        trips.append(trip)
+        selectedTripId = trip.id
+    }
+
+    func selectTrip(_ trip: Trip) {
+        selectedTripId = trip.id
+    }
+
+    func clearTrips() {
+        trips.removeAll()
+        selectedTripId = nil
     }
 }
