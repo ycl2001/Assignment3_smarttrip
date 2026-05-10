@@ -13,9 +13,9 @@ struct AddFlightView: View {
     var onSave: (Flight) -> Void
 
     // Search bar state
-    @State private var searchFrom = ""
-    @State private var searchTo   = ""
-    @State private var searchDate = Date()
+    @State private var searchFromCity = ""
+    @State private var searchToCity   = ""
+    @State private var searchDate     = Date()
 
     // Form fields (auto-filled by search or entered manually)
     @State private var flightNumber:     String    = ""
@@ -104,33 +104,52 @@ struct AddFlightView: View {
 
     private var searchCard: some View {
         card {
-            Text("Search by route")
+            Text("Search by destination")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // From → To row
+            // From row
             HStack(spacing: 10) {
                 Image(systemName: "airplane.departure")
                     .foregroundStyle(.secondary)
-                    .frame(width: 20)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    TextField("From city  (e.g. Sydney)", text: $searchFromCity)
+                        .autocorrectionDisabled()
+                        .onChange(of: searchFromCity) { _, _ in
+                            searchVM.resolvedFrom = nil
+                            searchVM.errorMessage = nil
+                            searchVM.results = []
+                        }
+                    if let iata = searchVM.resolvedFrom {
+                        Text("→ \(iata)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
 
-                TextField("From  (e.g. SYD)", text: $searchFrom)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .frame(maxWidth: .infinity)
+            Divider()
 
-                Image(systemName: "arrow.right")
-                    .foregroundStyle(Color(.systemGray3))
-                    .font(.caption)
-
+            // To row
+            HStack(spacing: 10) {
                 Image(systemName: "airplane.arrival")
                     .foregroundStyle(.secondary)
-                    .frame(width: 20)
-
-                TextField("To  (e.g. NRT)", text: $searchTo)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .frame(maxWidth: .infinity)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    TextField("To city  (e.g. Tokyo)", text: $searchToCity)
+                        .autocorrectionDisabled()
+                        .onChange(of: searchToCity) { _, _ in
+                            searchVM.resolvedTo = nil
+                            searchVM.errorMessage = nil
+                            searchVM.results = []
+                        }
+                    if let iata = searchVM.resolvedTo {
+                        Text("→ \(iata)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Divider()
@@ -148,7 +167,7 @@ struct AddFlightView: View {
                 }
             }
 
-            // Results list (multiple flights)
+            // Results list
             if !searchVM.results.isEmpty {
                 Divider()
 
@@ -173,9 +192,7 @@ struct AddFlightView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-
                             Spacer()
-
                             VStack(alignment: .trailing, spacing: 2) {
                                 HStack(spacing: 4) {
                                     Text(timeFmt.string(from: result.departureTime))
@@ -192,7 +209,6 @@ struct AddFlightView: View {
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
-
                             Image(systemName: "chevron.right")
                                 .foregroundStyle(.secondary)
                                 .font(.caption)
@@ -212,9 +228,9 @@ struct AddFlightView: View {
             Button {
                 Task {
                     await searchVM.search(
-                        from: searchFrom,
-                        to:   searchTo,
-                        date: searchDate
+                        fromCity: searchFromCity,
+                        toCity:   searchToCity,
+                        date:     searchDate
                     )
                 }
             } label: {
