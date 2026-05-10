@@ -13,8 +13,9 @@ struct AddFlightView: View {
     var onSave: (Flight) -> Void
 
     // Search bar state
-    @State private var searchFlightNumber = ""
-    @State private var searchDate         = Date()
+    @State private var searchFrom = ""
+    @State private var searchTo   = ""
+    @State private var searchDate = Date()
 
     // Form fields (auto-filled by search or entered manually)
     @State private var flightNumber:     String    = ""
@@ -34,6 +35,14 @@ struct AddFlightView: View {
     @State private var arrivalAirportError:   String? = nil
 
     private var isEditing: Bool { flightToEdit != nil }
+
+    // Time formatter for results list
+    private let timeFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        f.timeZone   = TimeZone(identifier: "UTC")
+        return f
+    }()
 
     var body: some View {
         NavigationStack {
@@ -70,20 +79,10 @@ struct AddFlightView: View {
                 }
             }
             .onAppear(perform: populateForEditing)
-            // Auto-fill form when search returns a result
-            .onChange(of: searchVM.result) { _, result in
-                guard let r = result else { return }
-                flightNumber     = r.flightNumber
-                airline          = r.airline
-                departureAirport = r.departureAirport
-                arrivalAirport   = r.arrivalAirport
-                departureTime    = r.departureTime
-                arrivalTime      = r.arrivalTime
-                // clear validation errors that might have been set
-                flightNumberError     = nil
-                airlineError          = nil
-                departureAirportError = nil
-                arrivalAirportError   = nil
+            // Auto-fill when exactly 1 result returns
+            .onChange(of: searchVM.results) { _, results in
+                guard results.count == 1 else { return }
+                fillForm(from: results[0])
             }
         }
     }
@@ -105,19 +104,40 @@ struct AddFlightView: View {
 
     private var searchCard: some View {
         card {
-            Text("Search by flight number")
+            Text("Search by route")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            TextField("e.g. QF1, SQ22, EK407", text: $searchFlightNumber)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
+            // From → To row
+            HStack(spacing: 10) {
+                Image(systemName: "airplane.departure")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+
+                TextField("From  (e.g. SYD)", text: $searchFrom)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .frame(maxWidth: .infinity)
+
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(Color(.systemGray3))
+                    .font(.caption)
+
+                Image(systemName: "airplane.arrival")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+
+                TextField("To  (e.g. NRT)", text: $searchTo)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .frame(maxWidth: .infinity)
+            }
 
             Divider()
 
             DatePicker("Date", selection: $searchDate, displayedComponents: .date)
 
-            // Error / result feedback
+            // Error feedback
             if let err = searchVM.errorMessage {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.circle.fill")
@@ -126,13 +146,64 @@ struct AddFlightView: View {
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
-            } else if searchVM.result != nil {
-                HStack(spacing: 6) {
+            }
+
+            // Results list (multiple flights)
+            if !searchVM.results.isEmpty {
+                Divider()
+
+                HStack {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("Flight found — fields filled below")
+                    Text("\(searchVM.results.count) flight(s) found — tap to select")
                         .font(.caption)
                         .foregroundStyle(.green)
+                }
+
+                ForEach(searchVM.results, id: \.flightNumber) { result in
+                    Button {
+                        fillForm(from: result)
+                    } label: {
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(result.flightNumber)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                Text(result.airline)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                HStack(spacing: 4) {
+                                    Text(timeFmt.string(from: result.departureTime))
+                                        .fontWeight(.semibold)
+                                    Image(systemName: "arrow.right")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                    Text(timeFmt.string(from: result.arrivalTime))
+                                        .fontWeight(.semibold)
+                                }
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                                Text("UTC")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.plain)
+
+                    if result != searchVM.results.last {
+                        Divider()
+                    }
                 }
             }
 
@@ -141,7 +212,8 @@ struct AddFlightView: View {
             Button {
                 Task {
                     await searchVM.search(
-                        flightNumber: searchFlightNumber,
+                        from: searchFrom,
+                        to:   searchTo,
                         date: searchDate
                     )
                 }
@@ -152,7 +224,7 @@ struct AddFlightView: View {
                     } else {
                         Image(systemName: "magnifyingglass")
                     }
-                    Text(searchVM.isSearching ? "Searching…" : "Search Flight")
+                    Text(searchVM.isSearching ? "Searching…" : "Search Flights")
                         .fontWeight(.semibold)
                 }
                 .frame(maxWidth: .infinity)
@@ -293,6 +365,20 @@ struct AddFlightView: View {
     }
 
     // MARK: - Logic
+
+    /// Fill form fields from a search result
+    private func fillForm(from result: FlightSearchResult) {
+        flightNumber     = result.flightNumber
+        airline          = result.airline
+        departureAirport = result.departureAirport
+        arrivalAirport   = result.arrivalAirport
+        departureTime    = result.departureTime
+        arrivalTime      = result.arrivalTime
+        flightNumberError     = nil
+        airlineError          = nil
+        departureAirportError = nil
+        arrivalAirportError   = nil
+    }
 
     private func populateForEditing() {
         guard let f = flightToEdit else { return }
