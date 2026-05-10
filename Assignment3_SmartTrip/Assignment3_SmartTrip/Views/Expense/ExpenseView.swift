@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ExpenseView: View {
     @ObservedObject var viewModel: ExpenseViewModel
+    var selectedExpense: Expense? = nil
+
     @State private var showingAddExpense = false
     @State private var expenseToEdit: Expense?
 
@@ -24,6 +26,7 @@ struct ExpenseView: View {
                 current = (label, [expense])
             }
         }
+
         if let last = current { groups.append(last) }
         return groups
     }
@@ -42,7 +45,9 @@ struct ExpenseView: View {
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button { showingAddExpense = true } label: {
+                Button {
+                    showingAddExpense = true
+                } label: {
                     Image(systemName: "plus")
                 }
             }
@@ -52,6 +57,11 @@ struct ExpenseView: View {
         }
         .sheet(item: $expenseToEdit) { expense in
             AddExpenseView(viewModel: viewModel, editingExpense: expense)
+        }
+        .onAppear {
+            if let selectedExpense {
+                expenseToEdit = selectedExpense
+            }
         }
     }
 
@@ -70,9 +80,12 @@ struct ExpenseView: View {
             Text("Total Spent")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
             Text(viewModel.totalSpending, format: .currency(code: "AUD"))
                 .font(.title2.bold())
+
             Divider()
+
             NavigationLink {
                 SplitResultView(viewModel: viewModel)
             } label: {
@@ -94,6 +107,7 @@ struct ExpenseView: View {
             Text("Quick Balance")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
             ForEach(viewModel.members) { member in
                 HStack {
                     Text(member.name)
@@ -102,7 +116,10 @@ struct ExpenseView: View {
                         .fontWeight(.semibold)
                         .foregroundStyle(viewModel.balance(for: member.id) >= 0 ? Color.green : Color.red)
                 }
-                if member.id != viewModel.members.last?.id { Divider() }
+
+                if member.id != viewModel.members.last?.id {
+                    Divider()
+                }
             }
         }
     }
@@ -115,8 +132,10 @@ struct ExpenseView: View {
                     Image(systemName: "receipt")
                         .font(.system(size: 36))
                         .foregroundStyle(.secondary)
+
                     Text("No expenses yet")
                         .font(.headline)
+
                     Text("Tap + to record your first expense")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -131,11 +150,17 @@ struct ExpenseView: View {
                     Text(group.dateLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
                     ForEach(group.items) { expense in
                         ExpenseRowView(expense: expense, viewModel: viewModel)
                             .contentShape(Rectangle())
-                            .onTapGesture { expenseToEdit = expense }
-                        if expense.id != group.items.last?.id { Divider() }
+                            .onTapGesture {
+                                expenseToEdit = expense
+                            }
+
+                        if expense.id != group.items.last?.id {
+                            Divider()
+                        }
                     }
                 }
             }
@@ -155,15 +180,20 @@ private struct ExpenseRowView: View {
                 .frame(width: 36, height: 36)
                 .background(Color(red: 0.02, green: 0.22, blue: 0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+
             VStack(alignment: .leading, spacing: 2) {
-                Text(expense.title).font(.body)
+                Text(expense.title)
+                    .font(.body)
+
                 if let payer = viewModel.member(for: expense.payerId) {
                     Text("Paid by \(payer.name)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+
             Spacer()
+
             Text(expense.amount, format: .currency(code: "AUD"))
                 .font(.body.bold())
         }
@@ -180,13 +210,36 @@ private struct ExpenseRowView: View {
             TripMember(name: "Zoe", role: "Member"),
             TripMember(name: "Selina", role: "Member")
         ]
-        let a = vm.members[0]; let b = vm.members[1]
-        let c = vm.members[2]; let d = vm.members[3]
-        vm.addExpense(Expense(title: "Dinner", amount: 90, payerId: a.id,
-            participantIds: [a.id, b.id, c.id, d.id], category: .food))
-        vm.addExpense(Expense(title: "Taxi", amount: 30, payerId: d.id,
-            participantIds: [c.id, d.id], category: .transport))
+
+        let a = vm.members[0]
+        let b = vm.members[1]
+        let c = vm.members[2]
+        let d = vm.members[3]
+
+        vm.addExpense(
+            Expense(
+                title: "Dinner",
+                amount: 90,
+                payerId: a.id,
+                participantIds: [a.id, b.id, c.id, d.id],
+                category: .food
+            )
+        )
+
+        vm.addExpense(
+            Expense(
+                title: "Taxi",
+                amount: 30,
+                payerId: d.id,
+                participantIds: [c.id, d.id],
+                category: .transport
+            )
+        )
+
         return vm
     }()
-    NavigationStack { ExpenseView(viewModel: vm) }
+
+    NavigationStack {
+        ExpenseView(viewModel: vm)
+    }
 }
