@@ -23,6 +23,7 @@ struct Trip: Identifiable {
 
     var members: [TripMember]
     var itineraryItems: [ItineraryItem]
+    var flights: [Flight]
 
     init(
         id: UUID = UUID(),
@@ -31,7 +32,8 @@ struct Trip: Identifiable {
         startDate: Date,
         endDate: Date,
         members: [TripMember],
-        itineraryItems: [ItineraryItem]
+        itineraryItems: [ItineraryItem],
+        flights: [Flight] = []
     ) {
 
         self.id = id
@@ -41,6 +43,7 @@ struct Trip: Identifiable {
         self.endDate = endDate
         self.members = members
         self.itineraryItems = itineraryItems
+        self.flights = flights
     }
 
     var numberOfDays: Int {
