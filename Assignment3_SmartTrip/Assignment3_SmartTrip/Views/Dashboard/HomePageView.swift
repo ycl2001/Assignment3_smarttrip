@@ -10,13 +10,14 @@ import SwiftUI
 struct HomePageView: View {
 
     @StateObject private var tripViewModel = TripViewModel()
+    @StateObject private var itineraryViewModel = ItineraryViewModel()
     @StateObject private var expenseViewModel = ExpenseViewModel()
 
     @State private var showCreateTrip = false
     @State private var showDashboard = false
-    
+
+    // Used to open EditTripView
     @State private var editingTrip: Trip?
-    @State private var showEditTrip = false
 
     var body: some View {
         NavigationStack {
@@ -25,7 +26,6 @@ struct HomePageView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 24) {
-
                     headerSection
 
                     if tripViewModel.hasTrip {
@@ -43,30 +43,19 @@ struct HomePageView: View {
 
             // Navigate to create trip page
             .navigationDestination(isPresented: $showCreateTrip) {
-
                 CreateTripView { newTrip in
-
-                    // Save newly created trip
                     tripViewModel.createTrip(newTrip)
-
-                    // Select newly created trip for dashboard
                     tripViewModel.selectTrip(newTrip)
 
-                    // Sync expense members
                     expenseViewModel.members = newTrip.members
+                    expenseViewModel.currentTripName = newTrip.name
 
-                    // Check if trip is already completed
                     let today = Calendar.current.startOfDay(for: Date())
                     let tripEndDate = Calendar.current.startOfDay(for: newTrip.endDate)
 
                     if tripEndDate >= today {
-
-                        // Go directly to dashboard
                         showDashboard = true
-
                     } else {
-
-                        // Past trips only go to archive
                         showCreateTrip = false
                         showDashboard = false
                     }
@@ -80,20 +69,20 @@ struct HomePageView: View {
                     expenseViewModel: expenseViewModel
                 )
             }
-            
+
             // Edit selected trip page
-            .sheet(isPresented: $showEditTrip) {
-                if let editingTrip {
-                    EditTripView(
-                        trip: editingTrip,
-                        onSave: { updatedTrip in
-                            tripViewModel.updateTrip(updatedTrip)
-                        },
-                        onDelete: {
-                            tripViewModel.deleteTrip(editingTrip)
-                        }
-                    )
-                }
+            .sheet(item: $editingTrip) { trip in
+                EditTripView(
+                    trip: trip,
+                    onSave: { updatedTrip in
+                        tripViewModel.updateTrip(updatedTrip)
+                        editingTrip = nil
+                    },
+                    onDelete: {
+                        tripViewModel.deleteTrip(trip)
+                        editingTrip = nil
+                    }
+                )
             }
         }
     }
@@ -101,21 +90,21 @@ struct HomePageView: View {
     // MARK: - Demo Data Loader
 
     private func loadDemoCardData() {
-
-        // If no trip exists, load demo trip
         if tripViewModel.trips.isEmpty {
             tripViewModel.createTrip(DemoCardData.trip)
         }
 
-        // Sync members into expense system
         if let selectedTrip = tripViewModel.selectedTrip {
             expenseViewModel.members = selectedTrip.members
+            expenseViewModel.currentTripName = selectedTrip.name
         } else {
             expenseViewModel.members = DemoCardData.members
+            expenseViewModel.currentTripName = DemoCardData.trip.name
         }
 
-        // Prevent duplicate expense loading
         if expenseViewModel.expenses.isEmpty {
+            expenseViewModel.currentTripName = DemoCardData.trip.name
+
             for expense in DemoCardData.expenses {
                 expenseViewModel.addExpense(expense)
             }
@@ -126,13 +115,10 @@ struct HomePageView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 18) {
-
             HStack {
                 Image(systemName: "globe.asia.australia.fill")
                     .font(.system(size: 34))
-                    .foregroundStyle(
-                        Color(red: 0.02, green: 0.30, blue: 0.22)
-                    )
+                    .foregroundStyle(Color(red: 0.02, green: 0.30, blue: 0.22))
 
                 Spacer()
 
@@ -147,7 +133,6 @@ struct HomePageView: View {
                         .clipShape(Circle())
                 }
 
-                // Profile button loads demo data
                 Button {
                     loadDemoCardData()
                 } label: {
@@ -185,7 +170,6 @@ struct HomePageView: View {
 
     private var emptyTripCard: some View {
         VStack(spacing: 28) {
-
             Spacer()
 
             Image(systemName: "safari.fill")
@@ -236,10 +220,11 @@ struct HomePageView: View {
         Button {
             tripViewModel.selectTrip(trip)
             expenseViewModel.members = trip.members
+            expenseViewModel.currentTripName = trip.name
             showDashboard = true
         } label: {
             VStack(alignment: .leading, spacing: 14) {
-                ZStack(alignment: .bottomLeading) {
+                ZStack {
                     RoundedRectangle(cornerRadius: 24)
                         .fill(
                             LinearGradient(
@@ -253,18 +238,48 @@ struct HomePageView: View {
                         )
                         .frame(height: 200)
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(trip.name)
-                            .font(.title.bold())
-                            .foregroundStyle(.white)
+                    VStack {
+                        HStack {
+                            Spacer()
 
-                        Text(trip.destination)
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.85))
+                            Menu {
+                                Button {
+                                    editingTrip = trip
+                                } label: {
+                                    Label("Edit Trip", systemImage: "pencil")
+                                }
 
-                        Text("\(formattedDate(trip.startDate)) - \(formattedDate(trip.endDate)) · \(trip.activityCount) activities")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.75))
+                                Button(role: .destructive) {
+                                    tripViewModel.deleteTrip(trip)
+                                } label: {
+                                    Label("Delete Trip", systemImage: "trash")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.black.opacity(0.25))
+                                    .clipShape(Circle())
+                            }
+                        }
+
+                        Spacer()
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(trip.name)
+                                .font(.title.bold())
+                                .foregroundStyle(.white)
+
+                            Text(trip.destination)
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.85))
+
+                            Text("\(formattedDate(trip.startDate)) - \(formattedDate(trip.endDate)) · \(trip.activityCount) activities")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.75))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding()
                 }
@@ -285,42 +300,13 @@ struct HomePageView: View {
             .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .contextMenu {
-
-            Button {
-
-                editingTrip = trip
-                showEditTrip = true
-
-            } label: {
-
-                Label(
-                    "Edit Trip",
-                    systemImage: "pencil"
-                )
-            }
-
-            Button(role: .destructive) {
-
-                tripViewModel.deleteTrip(trip)
-
-            } label: {
-
-                Label(
-                    "Delete Trip",
-                    systemImage: "trash"
-                )
-            }
-        }
     }
 
     // MARK: - Date Formatter
 
     private func formattedDate(_ date: Date) -> String {
-
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
-
         return formatter.string(from: date)
     }
 
@@ -348,9 +334,7 @@ struct HomePageView: View {
                 }
 
                 NavigationLink {
-                    BudgetListView(
-                        viewModel: expenseViewModel
-                    )
+                    BudgetListView(viewModel: expenseViewModel)
                 } label: {
                     bottomItem(
                         icon: "list.bullet.rectangle",
