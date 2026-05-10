@@ -7,10 +7,16 @@ import SwiftUI
 
 struct AddFlightView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var searchVM = FlightSearchViewModel()
 
     let flightToEdit: Flight?
     var onSave: (Flight) -> Void
 
+    // Search bar state
+    @State private var searchFlightNumber = ""
+    @State private var searchDate         = Date()
+
+    // Form fields (auto-filled by search or entered manually)
     @State private var flightNumber:     String    = ""
     @State private var airline:          String    = ""
     @State private var departureAirport: String    = ""
@@ -21,7 +27,7 @@ struct AddFlightView: View {
     @State private var confirmationCode: String    = ""
     @State private var notes:            String    = ""
 
-    // Validation errors
+    // Validation
     @State private var flightNumberError:     String? = nil
     @State private var airlineError:          String? = nil
     @State private var departureAirportError: String? = nil
@@ -39,10 +45,16 @@ struct AddFlightView: View {
                         .padding(.top, 8)
                         .padding(.horizontal)
 
+                    // Search card only shown when adding (not editing)
+                    if !isEditing {
+                        searchCard
+                    }
+
                     detailsCard
                     routeCard
                     scheduleCard
                     extrasCard
+
                     saveButton
                         .padding(.horizontal)
                         .padding(.top, 4)
@@ -58,6 +70,21 @@ struct AddFlightView: View {
                 }
             }
             .onAppear(perform: populateForEditing)
+            // Auto-fill form when search returns a result
+            .onChange(of: searchVM.result) { _, result in
+                guard let r = result else { return }
+                flightNumber     = r.flightNumber
+                airline          = r.airline
+                departureAirport = r.departureAirport
+                arrivalAirport   = r.arrivalAirport
+                departureTime    = r.departureTime
+                arrivalTime      = r.arrivalTime
+                // clear validation errors that might have been set
+                flightNumberError     = nil
+                airlineError          = nil
+                departureAirportError = nil
+                arrivalAirportError   = nil
+            }
         }
     }
 
@@ -74,7 +101,76 @@ struct AddFlightView: View {
         .padding(.horizontal)
     }
 
-    // MARK: - Sections
+    // MARK: - Search card
+
+    private var searchCard: some View {
+        card {
+            Text("Search by flight number")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("e.g. QF1, SQ22, EK407", text: $searchFlightNumber)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+
+            Divider()
+
+            DatePicker("Date", selection: $searchDate, displayedComponents: .date)
+
+            // Error / result feedback
+            if let err = searchVM.errorMessage {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(.red)
+                    Text(err)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            } else if searchVM.result != nil {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Flight found — fields filled below")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
+
+            Divider()
+
+            Button {
+                Task {
+                    await searchVM.search(
+                        flightNumber: searchFlightNumber,
+                        date: searchDate
+                    )
+                }
+            } label: {
+                HStack {
+                    if searchVM.isSearching {
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "magnifyingglass")
+                    }
+                    Text(searchVM.isSearching ? "Searching…" : "Search Flight")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color(red: 0.02, green: 0.22, blue: 0.15))
+                .foregroundStyle(.white)
+                .clipShape(Capsule())
+            }
+            .disabled(searchVM.isSearching)
+
+            Text("Or fill in the details manually below")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+
+    // MARK: - Form cards
 
     private var detailsCard: some View {
         card {
@@ -84,6 +180,8 @@ struct AddFlightView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 TextField("Flight number  (e.g. QF1)", text: $flightNumber)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
                     .onChange(of: flightNumber) { _, _ in flightNumberError = nil }
                 if let err = flightNumberError {
                     Text(err).font(.caption).foregroundStyle(.red)
@@ -112,7 +210,9 @@ struct AddFlightView: View {
                 HStack {
                     Image(systemName: "airplane.departure")
                         .foregroundStyle(.secondary)
-                    TextField("Departure  (e.g. SYD)", text: $departureAirport)
+                    TextField("Departure airport  (e.g. SYD)", text: $departureAirport)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
                         .onChange(of: departureAirport) { _, _ in departureAirportError = nil }
                 }
                 if let err = departureAirportError {
@@ -126,7 +226,9 @@ struct AddFlightView: View {
                 HStack {
                     Image(systemName: "airplane.arrival")
                         .foregroundStyle(.secondary)
-                    TextField("Arrival  (e.g. NRT)", text: $arrivalAirport)
+                    TextField("Arrival airport  (e.g. NRT)", text: $arrivalAirport)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
                         .onChange(of: arrivalAirport) { _, _ in arrivalAirportError = nil }
                 }
                 if let err = arrivalAirportError {
@@ -151,8 +253,7 @@ struct AddFlightView: View {
 
             Divider()
 
-            DatePicker("Arrival", selection: $arrivalTime,
-                       in: departureTime...)
+            DatePicker("Arrival", selection: $arrivalTime, in: departureTime...)
         }
     }
 
@@ -163,9 +264,7 @@ struct AddFlightView: View {
                 .foregroundStyle(.secondary)
 
             Picker("Seat Class", selection: $seatClass) {
-                ForEach(SeatClass.allCases) { c in
-                    Text(c.rawValue).tag(c)
-                }
+                ForEach(SeatClass.allCases) { c in Text(c.rawValue).tag(c) }
             }
             .pickerStyle(.menu)
 
@@ -230,7 +329,7 @@ struct AddFlightView: View {
         guard validate() else { return }
         let flight = Flight(
             id:               flightToEdit?.id ?? UUID(),
-            flightNumber:     flightNumber.trimmingCharacters(in: .whitespaces),
+            flightNumber:     flightNumber.trimmingCharacters(in: .whitespaces).uppercased(),
             airline:          airline.trimmingCharacters(in: .whitespaces),
             departureAirport: departureAirport.trimmingCharacters(in: .whitespaces).uppercased(),
             arrivalAirport:   arrivalAirport.trimmingCharacters(in: .whitespaces).uppercased(),
