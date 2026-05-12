@@ -17,6 +17,14 @@ struct ExpenseView: View {
         }
     }
 
+    /// Balances scoped to the current trip filter (or all trips if none)
+    private var effectiveBalances: [UUID: Double] {
+        if let tripNameFilter {
+            return viewModel.balances(for: tripNameFilter)
+        }
+        return viewModel.balances
+    }
+
     private var groupedExpenses: [(dateLabel: String, items: [Expense])] {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -155,21 +163,15 @@ struct ExpenseView: View {
                 .foregroundStyle(.secondary)
 
             ForEach(viewModel.members) { member in
+                let bal = effectiveBalances[member.id] ?? 0
                 HStack {
                     Text(member.name)
 
                     Spacer()
 
-                    Text(
-                        viewModel.balance(for: member.id),
-                        format: .currency(code: "AUD")
-                    )
-                    .fontWeight(.semibold)
-                    .foregroundStyle(
-                        viewModel.balance(for: member.id) >= 0
-                        ? Color.green
-                        : Color.red
-                    )
+                    Text(bal, format: .currency(code: "AUD"))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(bal >= 0 ? Color.green : Color.red)
                 }
 
                 if member.id != viewModel.members.last?.id {
