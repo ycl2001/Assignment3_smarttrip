@@ -11,6 +11,8 @@ struct BudgetListView: View {
 
     @ObservedObject var viewModel: ExpenseViewModel
 
+    @State private var expenseToEdit: Expense? = nil
+
     private var totalBudget: Double {
         viewModel.expenses.reduce(0) { $0 + $1.amount }
     }
@@ -24,11 +26,15 @@ struct BudgetListView: View {
                     emptyBudgetCard
                 } else {
                     ForEach(viewModel.expenses) { expense in
-                        NavigationLink {
-                            ExpenseView(
-                                viewModel: viewModel,
-                                selectedExpense: expense
-                            )
+                        Button {
+                            // Restore the correct members for this expense's trip
+                            // so AddExpenseView shows the right people
+                            let tripName = viewModel.tripName(for: expense)
+                            if let savedMembers = viewModel.tripMembersMap[tripName] {
+                                viewModel.currentTripName = tripName
+                                viewModel.members = savedMembers
+                            }
+                            expenseToEdit = expense
                         } label: {
                             expenseCard(expense)
                         }
@@ -40,6 +46,10 @@ struct BudgetListView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Budget")
+        // Opens AddExpenseView directly — Cancel returns straight to this screen (no P2)
+        .sheet(item: $expenseToEdit) { expense in
+            AddExpenseView(viewModel: viewModel, editingExpense: expense)
+        }
     }
 
     private var budgetSummaryCard: some View {
