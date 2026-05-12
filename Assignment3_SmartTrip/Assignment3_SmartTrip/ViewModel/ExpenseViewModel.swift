@@ -8,11 +8,23 @@ final class ExpenseViewModel: ObservableObject {
 
     @Published private(set) var expenses: [Expense] = []
 
-    // Members of the currently selected trip
-    @Published var members: [TripMember] = []
+    // Members of the currently selected trip.
+    // didSet automatically saves members into tripMembersMap so we can
+    // look up the correct members for any trip later (e.g. in BudgetListView).
+    @Published var members: [TripMember] = [] {
+        didSet {
+            if !currentTripName.isEmpty {
+                tripMembersMap[currentTripName] = members
+            }
+        }
+    }
 
     // Tracks which trip each expense belongs to
     @Published var expenseTripNames: [UUID: String] = [:]
+
+    // Stores members per trip name so BudgetListView can restore
+    // the correct member list when editing an expense from a different trip
+    @Published var tripMembersMap: [String: [TripMember]] = [:]
 
     // Used when adding a new expense
     @Published var currentTripName: String = "Current Trip"

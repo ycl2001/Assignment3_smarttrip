@@ -78,8 +78,8 @@ struct DashboardView: View {
         }
         .onAppear {
             if let trip {
-                expenseViewModel.members = trip.members
                 expenseViewModel.currentTripName = trip.name
+                expenseViewModel.members = trip.members
             }
         }
     }

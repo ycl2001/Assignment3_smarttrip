@@ -47,8 +47,8 @@ struct HomePageView: View {
                     tripViewModel.createTrip(newTrip)
                     tripViewModel.selectTrip(newTrip)
 
-                    expenseViewModel.members = newTrip.members
                     expenseViewModel.currentTripName = newTrip.name
+                    expenseViewModel.members = newTrip.members
 
                     let today = Calendar.current.startOfDay(for: Date())
                     let tripEndDate = Calendar.current.startOfDay(for: newTrip.endDate)
@@ -219,8 +219,8 @@ struct HomePageView: View {
     private func activeTripCard(_ trip: Trip) -> some View {
         Button {
             tripViewModel.selectTrip(trip)
-            expenseViewModel.members = trip.members
             expenseViewModel.currentTripName = trip.name
+            expenseViewModel.members = trip.members
             showDashboard = true
         } label: {
             VStack(alignment: .leading, spacing: 14) {
