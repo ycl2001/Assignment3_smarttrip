@@ -105,6 +105,20 @@ final class ExpenseViewModel: ObservableObject {
         balances[memberId] ?? 0
     }
 
+    /// Balances computed only from expenses belonging to a specific trip
+    func balances(for tripName: String) -> [UUID: Double] {
+        let tripExpenses = expenses(for: tripName)
+        var result: [UUID: Double] = [:]
+        members.forEach { result[$0.id] = 0 }
+        for expense in tripExpenses {
+            result[expense.payerId, default: 0] += expense.amount
+            for pid in expense.participantIds {
+                result[pid, default: 0] -= expense.shareAmount(for: pid)
+            }
+        }
+        return result.mapValues { ($0 * 100).rounded() / 100 }
+    }
+
     // MARK: - Settlement
 
     private func minimiseSettlements(from balanceMap: [UUID: Double]) -> [Settlement] {

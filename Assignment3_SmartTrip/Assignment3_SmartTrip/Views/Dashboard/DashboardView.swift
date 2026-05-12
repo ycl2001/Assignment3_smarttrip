@@ -166,14 +166,16 @@ struct DashboardView: View {
             .buttonStyle(.plain)
 
             NavigationLink {
-                ExpenseView(viewModel: expenseViewModel)
+                ExpenseView(viewModel: expenseViewModel, tripNameFilter: trip?.name)
             } label: {
+                let tripName = trip?.name ?? ""
+                let tripExpenses = expenseViewModel.expenses(for: tripName)
                 FeatureCard(
                     icon: "cylinder.split.1x2",
                     title: "Expense",
-                    subtitle: expenseViewModel.expenses.isEmpty
-                    ? "Not set up yet"
-                    : "Total: AUD \(String(format: "%.2f", expenseViewModel.totalSpending))"
+                    subtitle: tripExpenses.isEmpty
+                        ? "Not set up yet"
+                        : "Total: AUD \(String(format: "%.2f", expenseViewModel.totalSpending(for: tripName)))"
                 )
             }
             .buttonStyle(.plain)
