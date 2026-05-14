@@ -153,58 +153,8 @@ Examples:
 ---
 
 # Project Structure
+<img width="255" height="674" alt="Screenshot 2026-05-14 at 3 50 01 PM" src="https://github.com/user-attachments/assets/b4a466d7-c2c6-4238-b1e8-0b771e046388" />
 
-Assignment3_SmartTrip
-│
-├── Models
-│   ├── Trip.swift
-│   ├── Expense.swift
-│   ├── Flight.swift
-│   ├── TripMember.swift
-│   ├── TripSample.swift
-│   ├── TripStandard.swift
-│   ├── WeatherData.swift
-│   ├── ItineraryItem.swift
-│   ├── SuggestedPlace.swift
-│   ├── DemoCardData.swift
-│   └── DemoLocationData.swift
-│
-├── ViewModels
-│   ├── TripViewModel.swift
-│   ├── FlightSearchViewModel.swift
-│   ├── ExpenseViewModel.swift
-│   ├── ItineraryViewModel.swift
-│   └── WeatherViewModel.swift
-│
-Views
-├── Dashboard
-│   ├── DashboardView
-│   └── HomePageView
-│
-├── Expense
-│   ├── AddExpenseView
-│   ├── ExpenseView
-│   └── SplitResultView
-│
-├── Itinerary
-│   ├── AddEditItineraryItemView
-│   ├── ItineraryFormView
-│   └── ItineraryView
-│
-└── TripLayout
-│   ├── AddFlightView
-│   ├── BudgetListView
-│   ├── CreateTripView
-│   ├── EditTripView
-│   ├── FlightView
-│   ├── GroupView
-│   ├── LocationView
-│   ├── PastTripsView
-│   └── WeatherCardView
-│
-├── Assets
-│
-└── README.md
 
 ---
 
