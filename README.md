@@ -243,7 +243,6 @@ Potential future enhancements include:
 - Yen-Chun Liu
 - JinHao Feng
 - Zekun Liu
-- Ziying Zhao
 
 ---
 
