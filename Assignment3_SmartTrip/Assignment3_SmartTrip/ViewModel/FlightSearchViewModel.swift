@@ -64,7 +64,9 @@ class FlightSearchViewModel: ObservableObject {
 
     // ─── Replace with your own key from https://rapidapi.com ───
     // Sign up free → search "AeroDataBox" → subscribe to "Free" plan → copy API key
-    private let rapidAPIKey = "REDACTED_RAPIDAPI_KEY"
+    // ─── Paste your RapidAPI key here (local only, do NOT commit) ───
+    // Register free at https://rapidapi.com → search "AeroDataBox" → Free plan
+    private let rapidAPIKey = ""
     private let host        = "aerodatabox.p.rapidapi.com"
 
     // MARK: - City → IATA lookup table
