@@ -164,19 +164,6 @@ struct DashboardView: View {
                 )
             }
             .buttonStyle(.plain)
-            
-            if let trip {
-                NavigationLink {
-                    JourneyCapsuleView(trip: trip)
-                } label: {
-                    FeatureCard(
-                        icon: "camera.viewfinder",
-                        title: "Journey Capsule",
-                        subtitle: "Capture travel memories"
-                    )
-                }
-                .buttonStyle(.plain)
-            }
 
             NavigationLink {
                 ExpenseView(viewModel: expenseViewModel, tripNameFilter: trip?.name)
