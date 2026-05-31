@@ -65,7 +65,7 @@ The application focuses on:
 - Archived budget tracking
 - Historical itinerary viewing
 
-## Journey Capsule
+## 💊 Journey Capsule
 - Time-sensitive travel memory capture
 - Location-aware stamp moments
 - Stamp-style timeline entries
