@@ -53,3 +53,5 @@ Secrets.swift
 
 # macOS
 .DS_Store
+Assignment3_SmartTrip/Assignment3_SmartTrip/Secrets.plist
+*.bak

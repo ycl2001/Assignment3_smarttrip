@@ -13,7 +13,7 @@ class WeatherViewModel: ObservableObject {
     @Published var weatherInfo: WeatherInfo?
     
     // Paste personal OpenWeather API Key here
-    private let apiKey = "REDACTED_WEATHER_API_KEY"
+    private let apiKey = Secrets.value(for: "WeatherAPIKey")
     
     func fetchWeather(for location: String) async {
         let urlString = "https://api.openweathermap.org/data/2.5/weather?q=\(location)&appid=\(apiKey)&units=metric"
