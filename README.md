@@ -65,6 +65,12 @@ The application focuses on:
 - Archived budget tracking
 - Historical itinerary viewing
 
+## 💊 Journey Capsule
+- Time-sensitive travel memory capture
+- Location-aware stamp moments
+- Stamp-style timeline entries
+- Designed as a travel keepsake rather than a social media photo upload
+
 ## 🎨 User Experience
 - SwiftUI-based interface
 - Modern card-based design
@@ -242,8 +248,6 @@ Potential future enhancements include:
 
 - Yen-Chun Liu
 - JinHao Feng
-- Zekun Liu
-- Ziying Zhao
 
 ---
 
