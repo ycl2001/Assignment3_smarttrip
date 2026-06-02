@@ -55,3 +55,4 @@ Secrets.swift
 .DS_Store
 Assignment3_SmartTrip/Assignment3_SmartTrip/Secrets.plist
 *.bak
+Assignment3_SmartTrip/.DS_Store
